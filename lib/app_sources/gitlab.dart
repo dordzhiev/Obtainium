@@ -100,9 +100,10 @@ class GitLab extends AppSource {
     var json = jsonDecode(res.body) as List<dynamic>;
     Map<String, List<String>> results = {};
     for (var element in json) {
+      final item = element as Map<String, dynamic>;
       results['https://${hosts[0]}/${element['path_with_namespace']}'] = [
-        element['name_with_namespace'],
-        element['description'] ?? tr('noDescription'),
+        item['name_with_namespace'] as String,
+        (item['description'] as String?) ?? tr('noDescription'),
       ];
     }
     return results;
@@ -162,7 +163,7 @@ class GitLab extends AppSource {
     if (res0.statusCode != 200) {
       throw getObtainiumHttpError(res0);
     }
-    int? projectId = jsonDecode(res0.body)['id'];
+    int? projectId = (jsonDecode(res0.body) as Map<String, dynamic>)['id'] as int?;
     if (projectId == null) {
       throw NoReleasesError();
     }
@@ -233,10 +234,10 @@ class GitLab extends AppSource {
       var releaseDateString =
           e['released_at'] ?? e['created_at'] ?? e['commit']?['created_at'];
       DateTime? releaseDate = releaseDateString != null
-          ? DateTime.parse(releaseDateString)
+          ? DateTime.parse(releaseDateString as String)
           : null;
       return APKDetails(
-        e['tag_name'] ?? e['name'],
+        (e['tag_name'] ?? e['name']) as String,
         apkUrls.entries.toList(),
         AppNames(names.author, names.name.split('/').last),
         releaseDate: releaseDate,

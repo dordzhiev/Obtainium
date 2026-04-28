@@ -743,7 +743,9 @@ class AppsProvider with ChangeNotifier {
 
         if (app.additionalSettings['zippedApkFilterRegEx']?.isNotEmpty ==
             true) {
-          var reg = RegExp(app.additionalSettings['zippedApkFilterRegEx']);
+          var reg = RegExp(
+            app.additionalSettings['zippedApkFilterRegEx'] as String,
+          );
           apks.removeWhere((apk) {
             var shouldDelete = !reg.hasMatch(apk.uri.pathSegments.last);
             if (shouldDelete) {
@@ -1105,7 +1107,7 @@ class AppsProvider with ChangeNotifier {
 
     if ((urlsToSelectFrom.length > 1 || evenIfSingleChoice) &&
         context != null) {
-      appFileUrl = await showDialog(
+      appFileUrl = await showDialog<MapEntry<String, String>?>(
         // ignore: use_build_context_synchronously
         context: context,
         builder: (BuildContext ctx) {
@@ -1698,7 +1700,8 @@ class AppsProvider with ChangeNotifier {
                         '${singleId.toLowerCase()}.json')) {
               try {
                 app = App.fromJson(
-                  jsonDecode(File(item.path).readAsStringSync()),
+                  jsonDecode(File(item.path).readAsStringSync())
+                      as Map<String, dynamic>,
                 );
               } catch (err) {
                 if (err is FormatException) {
@@ -2129,7 +2132,7 @@ class AppsProvider with ChangeNotifier {
 
   Future<String?> export({
     bool pickOnly = false,
-    isAuto = false,
+    bool isAuto = false,
     SettingsProvider? sp,
   }) async {
     SettingsProvider settingsProvider = sp ?? this.settingsProvider;
@@ -2184,7 +2187,7 @@ class AppsProvider with ChangeNotifier {
     var newFormat = decodedJSON is! List;
     List<App> importedApps =
         ((newFormat ? decodedJSON['apps'] : decodedJSON) as List<dynamic>)
-            .map((e) => App.fromJson(e))
+            .map((e) => App.fromJson(e as Map<String, dynamic>))
             .toList();
     while (loadingApps) {
       await Future.delayed(const Duration(microseconds: 1));
@@ -2238,8 +2241,8 @@ class AppsProvider with ChangeNotifier {
       alreadyAddedUrls: apps.values.map((e) => e.app.url).toList(),
       sourceOverride: sourceOverride,
     );
-    List<App> pps = results[0];
-    Map<String, dynamic> errorsMap = results[1];
+    List<App> pps = results[0] as List<App>;
+    Map<String, dynamic> errorsMap = results[1] as Map<String, dynamic>;
     for (var app in pps) {
       if (apps.containsKey(app.id)) {
         errorsMap.addAll({app.id: tr('appAlreadyAdded')});
@@ -2439,7 +2442,7 @@ Future<void> bgUpdateCheck(String taskId, Map<String, dynamic>? params) async {
       0;
 
   List<MapEntry<String, int>> toCheck = <MapEntry<String, int>>[
-    ...(params['toCheck']
+    ...((params['toCheck'] as List<dynamic>?)
             ?.map(
               (entry) => MapEntry<String, int>(
                 entry['key'] as String,
@@ -2461,7 +2464,7 @@ Future<void> bgUpdateCheck(String taskId, Map<String, dynamic>? params) async {
             .map((e) => MapEntry(e, 0))),
   ];
   List<MapEntry<String, int>> toInstall = <MapEntry<String, int>>[
-    ...(params['toInstall']
+    ...((params['toInstall'] as List<dynamic>?)
             ?.map(
               (entry) => MapEntry<String, int>(
                 entry['key'] as String,
@@ -2469,7 +2472,7 @@ Future<void> bgUpdateCheck(String taskId, Map<String, dynamic>? params) async {
               ),
             )
             .toList() ??
-        (<List<MapEntry<String, int>>>[])),
+        (<MapEntry<String, int>>[])),
   ];
 
   var networkRestricted =
@@ -2538,8 +2541,8 @@ Future<void> bgUpdateCheck(String taskId, Map<String, dynamic>? params) async {
       );
     } catch (e) {
       if (e is Map) {
-        updates = e['updates'];
-        errors = e['errors'];
+        updates = e['updates'] as List<App>;
+        errors = e['errors'] as MultiAppMultiError?;
         errors!.rawErrors.forEach((key, err) {
           logs.add(
             'BG update task: Got error on checking for $key \'${err.toString()}\'.',

@@ -79,8 +79,8 @@ List<MapEntry<String, String>> assumed2DlistToStringMapList(
 // This function takes an App JSON and modifies it if needed to conform to the latest (current) version
 Map<String, dynamic> appJSONCompatibilityModifiers(Map<String, dynamic> json) {
   var source = SourceProvider().getSource(
-    json['url'],
-    overrideSource: json['overrideSource'],
+    json['url'] as String,
+    overrideSource: json['overrideSource'] as String?,
   );
   var formItems = source.combinedAppSpecificSettingFormItems.reduce(
     (value, element) => [...value, ...element],
@@ -91,13 +91,15 @@ Map<String, dynamic> appJSONCompatibilityModifiers(Map<String, dynamic> json) {
   Map<String, dynamic> originalAdditionalSettings = {};
   if (json['additionalSettings'] != null) {
     originalAdditionalSettings = Map<String, dynamic>.from(
-      jsonDecode(json['additionalSettings']),
+      jsonDecode(json['additionalSettings'] as String) as Map,
     );
     additionalSettings.addEntries(originalAdditionalSettings.entries);
   }
   // If needed, migrate old-style additionalData to newer-style additionalSettings (V1)
   if (json['additionalData'] != null) {
-    List<String> temp = List<String>.from(jsonDecode(json['additionalData']));
+    List<String> temp = List<String>.from(
+      jsonDecode(json['additionalData'] as String) as List,
+    );
     temp.asMap().forEach((i, value) {
       if (i < formItems.length) {
         if (formItems[i] is GeneratedFormSwitch) {
@@ -159,14 +161,14 @@ Map<String, dynamic> appJSONCompatibilityModifiers(Map<String, dynamic> json) {
   // apkUrls can either be old list or new named list apkUrls
   List<MapEntry<String, String>> apkUrls = [];
   if (json['apkUrls'] != null) {
-    var apkUrlJson = jsonDecode(json['apkUrls']);
+    var apkUrlJson = jsonDecode(json['apkUrls'] as String);
     try {
-      apkUrls = getApkUrlsFromUrls(List<String>.from(apkUrlJson));
+      apkUrls = getApkUrlsFromUrls(List<String>.from(apkUrlJson as List));
     } catch (e) {
-      apkUrls = assumed2DlistToStringMapList(List<dynamic>.from(apkUrlJson));
-      apkUrls = List<dynamic>.from(
-        apkUrlJson,
-      ).map((e) => MapEntry(e[0] as String, e[1] as String)).toList();
+      apkUrls = assumed2DlistToStringMapList(List<dynamic>.from(apkUrlJson as List));
+      apkUrls = List<dynamic>.from(apkUrlJson as List)
+          .map((e) => MapEntry(e[0] as String, e[1] as String))
+          .toList();
     }
     json['apkUrls'] = jsonEncode(stringMapListTo2DList(apkUrls));
   }
@@ -196,7 +198,7 @@ Map<String, dynamic> appJSONCompatibilityModifiers(Map<String, dynamic> json) {
         },
       ];
     }
-    if ((additionalSettings['intermediateLink']?.length ?? 0) > 0) {
+    if (((additionalSettings['intermediateLink'] as List?)?.length ?? 0) > 0) {
       additionalSettings['intermediateLink'] =
           additionalSettings['intermediateLink'].where((e) {
             return e['customLinkFilterRegex']?.isNotEmpty == true;
@@ -360,7 +362,7 @@ class App {
 
   String? get overrideName =>
       additionalSettings['appName']?.toString().trim().isNotEmpty == true
-      ? additionalSettings['appName']
+      ? additionalSettings['appName'] as String?
       : null;
 
   String get finalName {
@@ -369,7 +371,7 @@ class App {
 
   String? get overrideAuthor =>
       additionalSettings['appAuthor']?.toString().trim().isNotEmpty == true
-      ? additionalSettings['appAuthor']
+      ? additionalSettings['appAuthor'] as String?
       : null;
 
   String get finalAuthor {
@@ -417,14 +419,16 @@ class App {
           : json['installedVersion'] as String,
       (json['latestVersion'] ?? tr('unknown')) as String,
       assumed2DlistToStringMapList(
-        jsonDecode((json['apkUrls'] ?? '[["placeholder", "placeholder"]]')),
+        jsonDecode((json['apkUrls'] ?? '[["placeholder", "placeholder"]]')
+                as String)
+            as List,
       ),
       (json['preferredApkIndex'] ?? -1) as int,
-      jsonDecode(json['additionalSettings']) as Map<String, dynamic>,
+      jsonDecode(json['additionalSettings'] as String) as Map<String, dynamic>,
       json['lastUpdateCheck'] == null
           ? null
-          : DateTime.fromMicrosecondsSinceEpoch(json['lastUpdateCheck']),
-      json['pinned'] ?? false,
+          : DateTime.fromMicrosecondsSinceEpoch(json['lastUpdateCheck'] as int),
+      (json['pinned'] as bool?) ?? false,
       categories: json['categories'] != null
           ? (json['categories'] as List<dynamic>)
                 .map((e) => e.toString())
@@ -434,12 +438,12 @@ class App {
           : [],
       releaseDate: json['releaseDate'] == null
           ? null
-          : DateTime.fromMicrosecondsSinceEpoch(json['releaseDate']),
+          : DateTime.fromMicrosecondsSinceEpoch(json['releaseDate'] as int),
       changeLog: json['changeLog'] == null ? null : json['changeLog'] as String,
-      overrideSource: json['overrideSource'],
-      allowIdChange: json['allowIdChange'] ?? false,
+      overrideSource: json['overrideSource'] as String?,
+      allowIdChange: (json['allowIdChange'] as bool?) ?? false,
       otherAssetUrls: assumed2DlistToStringMapList(
-        jsonDecode((json['otherAssetUrls'] ?? '[]')),
+        jsonDecode((json['otherAssetUrls'] ?? '[]') as String) as List,
       ),
       pendingRepoRenameUrl: json['pendingRepoRenameUrl'] as String?,
     );
@@ -923,7 +927,7 @@ abstract class AppSource {
         if (e.runtimeType == GeneratedFormSwitch) {
           val = val.toString();
         }
-        results[e.key] = val;
+        results[e.key] = val as String;
       }
     }
     return results;
@@ -1232,8 +1236,8 @@ class SourceProvider {
     }
     apk.apkUrls = filterApks(
       apk.apkUrls,
-      additionalSettings['apkFilterRegEx'],
-      additionalSettings['invertAPKFilter'],
+      additionalSettings['apkFilterRegEx'] as String?,
+      additionalSettings['invertAPKFilter'] as bool?,
     );
     if (apk.apkUrls.isEmpty && !trackOnly) {
       throw NoAPKError();
@@ -1246,7 +1250,7 @@ class SourceProvider {
     App finalApp = App(
       currentApp?.id ??
           ((additionalSettings['appId'] != null)
-              ? additionalSettings['appId']
+              ? additionalSettings['appId'] as String?
               : null) ??
           (!trackOnly &&
                   (!source.appIdInferIsOptional ||

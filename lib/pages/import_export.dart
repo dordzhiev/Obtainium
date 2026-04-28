@@ -58,7 +58,7 @@ class _ImportExportPageState extends State<ImportExportPage> {
                   label: tr('appURLList'),
                   max: 7,
                   additionalValidators: [
-                    (dynamic value) {
+                    (String? value) {
                       if (value != null && value.isNotEmpty) {
                         var lines = value.trim().split('\n');
                         for (int i = 0; i < lines.length; i++) {
@@ -241,7 +241,7 @@ class _ImportExportPageState extends State<ImportExportPage> {
               });
               if (source.hosts.isEmpty || values['url'] != source.hosts[0]) {
                 source = sourceProvider.getSource(
-                  values['url'],
+                  values['url'] as String,
                   overrideSource: source.runtimeType.toString(),
                 );
               }
@@ -481,7 +481,7 @@ class _ImportExportPageState extends State<ImportExportPage> {
                                         if (value['exportSettings'] != null) {
                                           settingsProvider.exportSettings =
                                               int.parse(
-                                                value['exportSettings'],
+                                                value['exportSettings'] as String,
                                               );
                                         }
                                       }
@@ -794,7 +794,7 @@ class _SelectionModalState extends State<SelectionModal> {
               if (valid && !isBuilding) {
                 if (value['filter'] != null) {
                   setState(() {
-                    filterRegex = value['filter'];
+                    filterRegex = value['filter'] as String;
                   });
                 }
               }

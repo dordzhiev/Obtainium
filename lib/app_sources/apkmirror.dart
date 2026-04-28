@@ -78,7 +78,7 @@ class APKMirror extends AppSource {
         (additionalSettings['filterReleaseTitlesByRegEx'] as String?)
                 ?.isNotEmpty ==
             true
-        ? additionalSettings['filterReleaseTitlesByRegEx']
+        ? additionalSettings['filterReleaseTitlesByRegEx'] as String?
         : null;
     Response res = await sourceRequest(
       '$standardUrl/feed/',
@@ -98,13 +98,12 @@ class APKMirror extends AppSource {
         targetRelease = items[i];
         break;
       }
-      String? titleString = targetRelease?.querySelector('title')?.innerHtml;
-      String? dateString = targetRelease
-          ?.querySelector('pubDate')
-          ?.innerHtml
-          .split(' ')
-          .sublist(0, 5)
-          .join(' ');
+      String? titleString =
+          targetRelease?.querySelector('title')?.innerHtml as String?;
+      final pubDate = targetRelease?.querySelector('pubDate')?.innerHtml;
+      String? dateString = (pubDate is String)
+          ? pubDate.split(' ').sublist(0, 5).join(' ')
+          : null;
       DateTime? releaseDate = dateString != null
           ? HttpDate.parse('$dateString GMT')
           : null;

@@ -28,7 +28,7 @@ class VivoAppStore extends AppSource {
     Map<String, dynamic> additionalSettings = const {},
   }) async {
     var json = await getDetailJson(standardUrl, additionalSettings);
-    return json['package_name'];
+    return json['package_name'] as String?;
   }
 
   @override
@@ -65,8 +65,11 @@ class VivoAppStore extends AppSource {
     if (response.statusCode != 200) {
       throw getObtainiumHttpError(response);
     }
-    var json = jsonDecode(response.body);
-    if (json['code'] != 0 || !json['data']['appSearchResponse']['result']) {
+    var json = jsonDecode(response.body) as Map<String, dynamic>;
+    if (json['code'] != 0 ||
+        !(((json['data'] as Map<String, dynamic>)['appSearchResponse']
+                as Map<String, dynamic>)['result']
+            as bool)) {
       throw NoReleasesError();
     }
     Map<String, List<String>> results = {};
@@ -94,7 +97,7 @@ class VivoAppStore extends AppSource {
     if (response.statusCode != 200) {
       throw getObtainiumHttpError(response);
     }
-    var json = jsonDecode(response.body);
+    var json = jsonDecode(response.body) as Map<String, dynamic>;
     if (json['id'] == null) {
       throw NoReleasesError();
     }

@@ -341,7 +341,7 @@ class AppsPageState extends State<AppsPage> {
     }).toList();
 
     if (settingsProvider.pinUpdates) {
-      var temp = [];
+      var temp = <AppInMemory>[];
       listedApps = listedApps.where((sa) {
         if (existingUpdates.contains(sa.app.id)) {
           temp.add(sa);
@@ -353,7 +353,7 @@ class AppsPageState extends State<AppsPage> {
     }
 
     if (settingsProvider.buryNonInstalled) {
-      var temp = [];
+      var temp = <AppInMemory>[];
       listedApps = listedApps.where((sa) {
         if (sa.app.installedVersion == null) {
           temp.add(sa);
@@ -364,9 +364,9 @@ class AppsPageState extends State<AppsPage> {
       listedApps = [...listedApps, ...temp];
     }
 
-    var tempRenamed = [];
-    var tempPinned = [];
-    var tempNotPinned = [];
+    var tempRenamed = <AppInMemory>[];
+    var tempPinned = <AppInMemory>[];
+    var tempNotPinned = <AppInMemory>[];
     for (var a in listedApps) {
       if (a.app.hasPendingRepoRename) {
         tempRenamed.add(a);
@@ -384,7 +384,9 @@ class AppsPageState extends State<AppsPage> {
       );
       return temp.isNotEmpty
           ? {
-              ...temp.reduce((v, e) => [...v, ...e]),
+              ...temp.reduce(
+                (v, e) => <String?>[...v, ...e],
+              ),
             }.toList()
           : [];
     }
@@ -1256,13 +1258,13 @@ class AppsPageState extends State<AppsPage> {
                   'appName',
                   label: tr('appName'),
                   required: false,
-                  defaultValue: vals['appName'],
+                  defaultValue: vals['appName'] as String,
                 ),
                 GeneratedFormTextField(
                   'author',
                   label: tr('author'),
                   required: false,
-                  defaultValue: vals['author'],
+                  defaultValue: vals['author'] as String,
                 ),
               ],
               [
@@ -1270,21 +1272,21 @@ class AppsPageState extends State<AppsPage> {
                   'appId',
                   label: tr('appId'),
                   required: false,
-                  defaultValue: vals['appId'],
+                  defaultValue: vals['appId'] as String,
                 ),
               ],
               [
                 GeneratedFormSwitch(
                   'upToDateApps',
                   label: tr('upToDateApps'),
-                  defaultValue: vals['upToDateApps'],
+                  defaultValue: vals['upToDateApps'] as bool,
                 ),
               ],
               [
                 GeneratedFormSwitch(
                   'nonInstalledApps',
                   label: tr('nonInstalledApps'),
-                  defaultValue: vals['nonInstalledApps'],
+                  defaultValue: vals['nonInstalledApps'] as bool,
                 ),
               ],
               [
@@ -1451,12 +1453,12 @@ class AppsFilter {
   }
 
   void setFormValuesFromMap(Map<String, dynamic> values) {
-    nameFilter = values['appName']!;
-    authorFilter = values['author']!;
-    idFilter = values['appId']!;
-    includeUptodate = values['upToDateApps'];
-    includeNonInstalled = values['nonInstalledApps'];
-    sourceFilter = values['sourceFilter'];
+    nameFilter = values['appName'] as String;
+    authorFilter = values['author'] as String;
+    idFilter = values['appId'] as String;
+    includeUptodate = values['upToDateApps'] as bool;
+    includeNonInstalled = values['nonInstalledApps'] as bool;
+    sourceFilter = values['sourceFilter'] as String;
   }
 
   bool isIdenticalTo(AppsFilter other, SettingsProvider settingsProvider) =>

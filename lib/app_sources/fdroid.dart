@@ -207,18 +207,18 @@ class FDroid extends AppSource {
     var filterVersionsByRegEx =
         (additionalSettings['filterVersionsByRegEx'] as String?)?.isNotEmpty ==
             true
-        ? additionalSettings['filterVersionsByRegEx']
+        ? additionalSettings['filterVersionsByRegEx'] as String?
         : null;
-    var apkFilterRegEx =
+    String? apkFilterRegEx =
         (additionalSettings['apkFilterRegEx'] as String?)?.isNotEmpty == true
-        ? additionalSettings['apkFilterRegEx']
+        ? additionalSettings['apkFilterRegEx'] as String?
         : null;
     if (res.statusCode == 200) {
-      var response = jsonDecode(res.body);
-      List<dynamic> releases = response['packages'] ?? [];
+      var response = jsonDecode(res.body) as Map<String, dynamic>;
+      List<dynamic> releases = (response['packages'] as List<dynamic>? ?? []);
       if (apkFilterRegEx != null) {
         releases = releases.where((rel) {
-          String apk = '${apkUrlPrefix}_${rel['versionCode']}.apk';
+          String apk = '${apkUrlPrefix}_${(rel as Map<String, dynamic>)['versionCode']}.apk';
           return filterApks(
             [MapEntry(apk, apk)],
             apkFilterRegEx,
@@ -242,7 +242,8 @@ class FDroid extends AppSource {
         );
         if (suggestedReleases.isNotEmpty) {
           releaseChoices = suggestedReleases;
-          version = suggestedReleases.first['versionName'];
+          version = (suggestedReleases.first as Map<String, dynamic>)['versionName']
+              as String?;
         }
       }
       // Apply the release filter if any
@@ -252,8 +253,9 @@ class FDroid extends AppSource {
         for (var i = 0; i < releases.length; i++) {
           if (RegExp(
             filterVersionsByRegEx!,
-          ).hasMatch(releases[i]['versionName'])) {
-            version = releases[i]['versionName'];
+          ).hasMatch((releases[i] as Map<String, dynamic>)['versionName'] as String)) {
+            version = (releases[i] as Map<String, dynamic>)['versionName']
+                as String?;
           }
         }
         if (version == null) {
@@ -261,7 +263,7 @@ class FDroid extends AppSource {
         }
       }
       // Default to the highest version
-      version ??= releases[0]['versionName'];
+      version ??= (releases[0] as Map<String, dynamic>)['versionName'] as String?;
       if (version == null) {
         throw NoVersionError();
       }

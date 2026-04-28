@@ -102,7 +102,7 @@ class LiteAPKs extends AppSource {
                 [])
             .map(
               (l) => MapEntry<String, String>(
-                Uri.decodeComponent(Uri.parse(l).pathSegments.last),
+                Uri.decodeComponent(Uri.parse(l as String).pathSegments.last),
                 '$l#$standardUrl',
               ),
             )

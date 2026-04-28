@@ -386,7 +386,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 if (formItem is GeneratedFormSwitch) {
                   settingsProvider.setSettingBool(key, value == true);
                 } else {
-                  settingsProvider.setSettingString(key, value ?? '');
+                  settingsProvider.setSettingString(key, (value ?? '') as String);
                 }
               });
             }

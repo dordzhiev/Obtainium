@@ -83,10 +83,11 @@ class APKPure extends AppSource {
   ) async {
     var apkUrls = versionVariants
         .map((e) {
-          String appId = e['package_name'];
-          String versionCode = e['version_code'];
+          String appId = e['package_name'] as String;
+          String versionCode = e['version_code'] as String;
 
-          List<String> architectures = e['native_code']?.cast<String>();
+          List<String> architectures =
+              (e['native_code'] as List<dynamic>? ?? []).cast<String>();
           String architectureString = architectures.join(',');
           if (architectures.contains("universal") ||
               architectures.contains("unlimited")) {
@@ -98,8 +99,9 @@ class APKPure extends AppSource {
             return null;
           }
 
-          String type = e['asset']['type'];
-          String downloadUri = e['asset']['url'];
+          final asset = e['asset'] as Map<String, dynamic>;
+          String type = asset['type'] as String;
+          String downloadUri = asset['url'] as String;
 
           return MapEntry(
             '$appId-$versionCode-$architectureString.${type.toLowerCase()}',
@@ -116,11 +118,11 @@ class APKPure extends AppSource {
 
     // get version details from first variant
     var v = versionVariants.first;
-    String version = v['version_name'];
-    String author = v['developer'];
-    String appName = v['title'];
-    DateTime releaseDate = DateTime.parse(v['update_date']);
-    String? changeLog = v['whatsnew'];
+    String version = v['version_name'] as String;
+    String author = v['developer'] as String;
+    String appName = v['title'] as String;
+    DateTime releaseDate = DateTime.parse(v['update_date'] as String);
+    String? changeLog = v['whatsnew'] as String?;
     if (changeLog != null && changeLog.isEmpty) {
       changeLog = null;
     }
@@ -173,9 +175,11 @@ class APKPure extends AppSource {
     if (res.statusCode != 200) {
       throw getObtainiumHttpError(res);
     }
-    List<Map<String, dynamic>> apks = jsonDecode(
-      res.body,
-    )['version_list'].cast<Map<String, dynamic>>();
+    final decoded = jsonDecode(res.body) as Map<String, dynamic>;
+    List<Map<String, dynamic>> apks =
+        (decoded['version_list'] as List<dynamic>)
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
 
     // group by version
     List<List<Map<String, dynamic>>> versions = apks
@@ -183,7 +187,7 @@ class APKPure extends AppSource {
           Map<String, List<Map<String, dynamic>>> val,
           Map<String, dynamic> element,
         ) {
-          String v = element['version_name'];
+          String v = element['version_name'] as String;
           if (!val.containsKey(v)) {
             val[v] = [];
           }

@@ -61,14 +61,14 @@ class CoolApk extends AppSource {
       throw NoReleasesError();
     }
 
-    var detail = json['data'];
+    var detail = json['data'] as Map<String, dynamic>;
     String version = detail['apkversionname'].toString();
     String appName = detail['title'].toString();
     String author = detail['developername']?.toString() ?? 'CoolApk';
     String changelog = detail['changelog']?.toString() ?? '';
     int? releaseDate = detail['lastupdate'] != null
         ? (detail['lastupdate'] is int
-              ? detail['lastupdate'] * 1000
+              ? (detail['lastupdate'] as int) * 1000
               : int.parse(detail['lastupdate'].toString()) * 1000)
         : null;
     String aid = detail['id'].toString();

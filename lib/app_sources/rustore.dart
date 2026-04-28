@@ -61,16 +61,18 @@ class RuStore extends AppSource {
     if (res0.statusCode != 200) {
       throw getObtainiumHttpError(res0);
     }
-    var appDetails = (await decodeJsonBody(res0.bodyBytes))['body'];
+    var appDetails =
+        ((await decodeJsonBody(res0.bodyBytes)) as Map<String, dynamic>)['body']
+            as Map<String, dynamic>;
     if (appDetails['appId'] == null) {
       throw NoReleasesError();
     }
 
-    String appName = appDetails['appName'] ?? tr('app');
-    String author = appDetails['companyName'] ?? name;
-    String? dateStr = appDetails['appVerUpdatedAt'];
-    String? version = appDetails['versionName'];
-    String? changeLog = appDetails['whatsNew'];
+    String appName = (appDetails['appName'] as String?) ?? tr('app');
+    String author = (appDetails['companyName'] as String?) ?? name;
+    String? dateStr = appDetails['appVerUpdatedAt'] as String?;
+    String? version = appDetails['versionName'] as String?;
+    String? changeLog = appDetails['whatsNew'] as String?;
     if (version == null) {
       throw NoVersionError();
     }

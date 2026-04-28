@@ -387,7 +387,9 @@ class GitHub extends AppSource {
         );
         String? newUrl;
         try {
-          newUrl = jsonDecode(res2.body)['html_url'];
+          newUrl =
+              (jsonDecode(res2.body) as Map<String, dynamic>)['html_url']
+                  as String?;
         } catch (e, stackTrace) {
           AppLogger.debug(
             'Could not parse redirect metadata for potential repo rename at $location',
@@ -430,19 +432,20 @@ class GitHub extends AppSource {
         (additionalSettings['filterReleaseTitlesByRegEx'] as String?)
                 ?.isNotEmpty ==
             true
-        ? additionalSettings['filterReleaseTitlesByRegEx']
+        ? additionalSettings['filterReleaseTitlesByRegEx'] as String?
         : null;
     String? regexNotesFilter =
         (additionalSettings['filterReleaseNotesByRegEx'] as String?)
                 ?.isNotEmpty ==
             true
-        ? additionalSettings['filterReleaseNotesByRegEx']
+        ? additionalSettings['filterReleaseNotesByRegEx'] as String?
         : null;
     bool verifyLatestTag = additionalSettings['verifyLatestTag'] == true;
     bool useLatestAssetDateAsReleaseDate =
         additionalSettings['useLatestAssetDateAsReleaseDate'] == true;
     String sortMethod =
-        additionalSettings['sortMethodChoice'] ?? 'smartname-datefallback';
+        (additionalSettings['sortMethodChoice'] as String?) ??
+        'smartname-datefallback';
     bool includeZips = additionalSettings['includeZips'] == true;
     dynamic latestRelease;
     if (verifyLatestTag) {
@@ -477,13 +480,15 @@ class GitHub extends AppSource {
       findReleaseAssetUrls(dynamic release) =>
           (release['assets'] as List<dynamic>?)?.map((e) {
             var ext = e['name'].toString().toLowerCase().split('.').last;
-            var url =
+            String? url =
                 !(ext == 'apk' ||
                     ext == 'xapk' ||
                     (includeZips && ext == 'zip'))
-                ? (e['browser_download_url'] ?? e['url'])
-                : (e['url'] ?? e['browser_download_url']);
-            url = undoGHProxyMod(url, sourceConfigSettingValues);
+                ? (e['browser_download_url'] ?? e['url']) as String?
+                : (e['url'] ?? e['browser_download_url']) as String?;
+            if (url != null) {
+              url = undoGHProxyMod(url, sourceConfigSettingValues);
+            }
             e['final_url'] = (e['name'] != null) && (url != null)
                 ? MapEntry(e['name'] as String, url as String)
                 : const MapEntry('', '');
@@ -493,9 +498,9 @@ class GitHub extends AppSource {
 
       DateTime? getPublishDateFromRelease(dynamic rel) =>
           rel?['published_at'] != null
-          ? DateTime.parse(rel['published_at'])
+          ? DateTime.parse(rel['published_at'] as String)
           : rel?['commit']?['created'] != null
-          ? DateTime.parse(rel['commit']['created'])
+          ? DateTime.parse(rel['commit']['created'] as String)
           : null;
       DateTime? getNewestAssetDateFromRelease(dynamic rel) {
         var allAssets = rel['assets'] as List<dynamic>?;
@@ -503,7 +508,7 @@ class GitHub extends AppSource {
         var t = (filteredAssets ?? allAssets)
             ?.map((e) {
               return e?['updated_at'] != null
-                  ? DateTime.parse(e['updated_at'])
+                  ? DateTime.parse(e['updated_at'] as String)
                   : null;
             })
             .where((e) => e != null)
@@ -532,8 +537,8 @@ class GitHub extends AppSource {
           } else if (b == null) {
             return 1;
           } else {
-            var nameA = a['tag_name'] ?? a['name'];
-            var nameB = b['tag_name'] ?? b['name'];
+            var nameA = (a['tag_name'] ?? a['name']) as String;
+            var nameB = (b['tag_name'] ?? b['name']) as String;
             var stdFormats = findStandardFormatsForVersion(
               nameA,
               false,
@@ -632,8 +637,8 @@ class GitHub extends AppSource {
           apkAssetsWithUrls
               .map((e) => e['final_url'] as MapEntry<String, String>)
               .toList(),
-          additionalSettings['apkFilterRegEx'],
-          additionalSettings['invertAPKFilter'],
+          additionalSettings['apkFilterRegEx'] as String?,
+          additionalSettings['invertAPKFilter'] as bool?,
         );
         var filteredApks = apkAssetsWithUrls
             .where(
@@ -660,9 +665,9 @@ class GitHub extends AppSource {
         if (targetRelease['tarball_url'] != null) {
           allAssetUrls.add(
             MapEntry(
-              (targetRelease['version'] ?? 'source') + '.tar.gz',
+              ((targetRelease['version'] as String?) ?? 'source') + '.tar.gz',
               undoGHProxyMod(
-                targetRelease['tarball_url'],
+                targetRelease['tarball_url'] as String,
                 sourceConfigSettingValues,
               ),
             ),
@@ -671,9 +676,9 @@ class GitHub extends AppSource {
         if (targetRelease['zipball_url'] != null) {
           allAssetUrls.add(
             MapEntry(
-              (targetRelease['version'] ?? 'source') + '.zip',
+              ((targetRelease['version'] as String?) ?? 'source') + '.zip',
               undoGHProxyMod(
-                targetRelease['zipball_url'],
+                targetRelease['zipball_url'] as String,
                 sourceConfigSettingValues,
               ),
             ),
@@ -685,7 +690,7 @@ class GitHub extends AppSource {
       if (targetRelease == null) {
         throw NoReleasesError();
       }
-      String? version = targetRelease['version'];
+      String? version = targetRelease['version'] as String?;
 
       DateTime? releaseDate = getReleaseDateFromRelease(
         targetRelease,
@@ -772,17 +777,20 @@ class GitHub extends AppSource {
     Response res = await sourceRequest(requestUrl, {});
     if (res.statusCode == 200) {
       int minStarCount = querySettings['minStarCount'] != null
-          ? int.parse(querySettings['minStarCount'])
+          ? int.parse(querySettings['minStarCount'] as String)
           : 0;
       Map<String, List<String>> urlsWithDescriptions = {};
-      for (var e in (jsonDecode(res.body)[rootProp] as List<dynamic>)) {
-        if ((e['stargazers_count'] ?? e['stars_count'] ?? 0) >= minStarCount) {
+      for (var e in ((jsonDecode(res.body) as Map<String, dynamic>)[rootProp]
+          as List<dynamic>)) {
+        final item = e as Map<String, dynamic>;
+        final stars = (item['stargazers_count'] ?? item['stars_count'] ?? 0) as num;
+        if (stars >= minStarCount) {
           urlsWithDescriptions.addAll({
-            e['html_url'] as String: [
-              e['full_name'] as String,
-              ((e['archived'] == true ? '[ARCHIVED] ' : '') +
-                  (e['description'] != null
-                      ? e['description'] as String
+            item['html_url'] as String: [
+              item['full_name'] as String,
+              ((item['archived'] == true ? '[ARCHIVED] ' : '') +
+                  (item['description'] != null
+                      ? item['description'] as String
                       : tr('noDescription'))),
             ],
           });

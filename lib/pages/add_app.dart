@@ -284,7 +284,11 @@ class AddAppPageState extends State<AddAppPage> {
               ],
             ],
             onValueChanges: (values, valid, isBuilding) {
-              changeUserInput(values['appSourceURL']!, valid, isBuilding);
+              changeUserInput(
+                values['appSourceURL'] as String,
+                valid,
+                isBuilding,
+              );
             },
           ),
         ),
@@ -507,7 +511,7 @@ class AddAppPageState extends State<AddAppPage> {
                         (values['overrideSource'] == null ||
                             values['overrideSource'] == '')
                         ? null
-                        : values['overrideSource'];
+                        : values['overrideSource'] as String;
                   }
 
                   if (!isBuilding) {
@@ -548,7 +552,7 @@ class AddAppPageState extends State<AddAppPage> {
             onValueChanges: (values, valid, isBuilding) {
               if (values.isNotEmpty && valid && !isBuilding) {
                 setState(() {
-                  searchQuery = values['searchSomeSources']!.trim();
+                  searchQuery = (values['searchSomeSources'] as String).trim();
                 });
               }
             },
@@ -625,7 +629,8 @@ class AddAppPageState extends State<AddAppPage> {
             onValueChanges: (values, valid, isBuilding) {
               if (!isBuilding) {
                 setState(() {
-                  inferAppIdIfOptional = values['inferAppIdIfOptional'];
+                  inferAppIdIfOptional =
+                      values['inferAppIdIfOptional'] as bool;
                 });
               }
             },

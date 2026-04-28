@@ -345,7 +345,7 @@ class _ObtainiumState extends State<Obtainium> {
               })
               .catchError((err) {
                 AppLogger.error(
-                  err,
+                  err as Object,
                   message:
                       'Failed to preload Obtainium app metadata on first run',
                 );

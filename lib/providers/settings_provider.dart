@@ -275,7 +275,9 @@ class SettingsProvider with ChangeNotifier {
   }
 
   Map<String, int> get categories =>
-      Map<String, int>.from(jsonDecode(prefs?.getString('categories') ?? '{}'));
+      Map<String, int>.from(
+        jsonDecode(prefs?.getString('categories') ?? '{}') as Map,
+      );
 
   void setCategories(Map<String, int> cats, {AppsProvider? appsProvider}) {
     if (appsProvider != null) {

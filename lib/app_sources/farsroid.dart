@@ -87,8 +87,8 @@ class Farsroid extends AppSource {
 
     apkLinks = filterApks(
       apkLinks,
-      additionalSettings['apkFilterRegEx'],
-      additionalSettings['invertAPKFilter'],
+      additionalSettings['apkFilterRegEx'] as String?,
+      additionalSettings['invertAPKFilter'] as bool?,
     );
     if (apkLinks.isEmpty) {
       throw NoAPKError();

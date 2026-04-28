@@ -61,7 +61,7 @@ class GeneratedFormTextField extends GeneratedFormItem {
       key,
       label: label,
       belowWidgets: belowWidgets,
-      defaultValue: defaultValue,
+      defaultValue: defaultValue as String,
       additionalValidators: List.from(additionalValidators),
       required: required,
       max: max,
@@ -98,7 +98,7 @@ class GeneratedFormDropdown extends GeneratedFormItem {
       opts?.map((e) => MapEntry(e.key, e.value)).toList(),
       label: label,
       belowWidgets: belowWidgets,
-      defaultValue: defaultValue,
+      defaultValue: defaultValue as String,
       disabledOptKeys: disabledOptKeys != null
           ? List.from(disabledOptKeys!)
           : null,
@@ -130,7 +130,7 @@ class GeneratedFormSwitch extends GeneratedFormItem {
       key,
       label: label,
       belowWidgets: belowWidgets,
-      defaultValue: defaultValue,
+      defaultValue: defaultValue as bool,
       disabled: false,
       additionalValidators: List.from(additionalValidators),
     );
@@ -169,7 +169,8 @@ class GeneratedFormTagInput extends GeneratedFormItem {
       key,
       label: label,
       belowWidgets: belowWidgets,
-      defaultValue: defaultValue,
+      defaultValue:
+          (defaultValue as Map?)?.cast<String, MapEntry<int, bool>>() ?? {},
       additionalValidators: List.from(additionalValidators),
       deleteConfirmationMessage: deleteConfirmationMessage,
       singleSelect: singleSelect,
@@ -260,7 +261,7 @@ int generateRandomNumber(
   int seed1, {
   int seed2 = 0,
   int seed3 = 0,
-  max = 10000,
+  int max = 10000,
 }) {
   int combinedSeed = seed1.hashCode ^ seed2.hashCode ^ seed3.hashCode;
   Random random = Random(combinedSeed);
@@ -384,7 +385,7 @@ class _GeneratedFormState extends State<GeneratedForm> {
         var formItem = e.value;
         if (formItem is GeneratedFormTextField) {
           final formFieldKey = GlobalKey<FormFieldState>();
-          var ctrl = TextEditingController(text: values[formItem.key]);
+          var ctrl = TextEditingController(text: values[formItem.key] as String?);
           return TypeAheadField<String>(
             controller: ctrl,
             builder: (context, controller, focusNode) {
@@ -414,7 +415,9 @@ class _GeneratedFormState extends State<GeneratedForm> {
                       (value == null || value.trim().isEmpty)) {
                     return '${formItem.label} ${tr('requiredInBrackets')}';
                   }
-                  for (var validator in formItem.additionalValidators) {
+                  for (var validator
+                      in formItem.additionalValidators
+                          .cast<String? Function(String?)>()) {
                     String? result = validator(value);
                     if (result != null) {
                       return result;
@@ -475,8 +478,8 @@ class _GeneratedFormState extends State<GeneratedForm> {
           );
         } else if (formItem is GeneratedFormSubForm) {
           values[formItem.key] = [];
-          for (Map<String, dynamic> v
-              in ((formItem.defaultValue ?? []) as List<dynamic>)) {
+          for (var v in ((formItem.defaultValue ?? []) as List<dynamic>)
+              .cast<Map<String, dynamic>>()) {
             var fullDefaults = getDefaultValuesFromFormItems(formItem.items);
             for (var element in v.entries) {
               fullDefaults[element.key] = element.value;
@@ -513,7 +516,7 @@ class _GeneratedFormState extends State<GeneratedForm> {
               Flexible(child: Text(widget.items[r][e].label)),
               const SizedBox(width: 8),
               Switch(
-                value: values[fieldKey],
+                value: values[fieldKey] as bool? ?? false,
                 onChanged: (widget.items[r][e] as GeneratedFormSwitch).disabled
                     ? null
                     : (value) {
@@ -538,7 +541,7 @@ class _GeneratedFormState extends State<GeneratedForm> {
                 );
               },
             ).then((value) {
-              String? label = value?['label'];
+              String? label = value?['label'] as String?;
               if (label != null) {
                 setState(() {
                   var temp =
@@ -779,10 +782,10 @@ class _GeneratedFormState extends State<GeneratedForm> {
           var compact =
               (widget.items[r][e] as GeneratedFormSubForm).items.length == 1 &&
               (widget.items[r][e] as GeneratedFormSubForm).items[0].length == 1;
-          for (int i = 0; i < values[fieldKey].length; i++) {
+          for (int i = 0; i < (values[fieldKey] as List<dynamic>).length; i++) {
             var internalFormKey = ValueKey(
               generateRandomNumber(
-                values[fieldKey].length,
+                (values[fieldKey] as List<dynamic>).length,
                 seed2: i,
                 seed3: forceUpdateKeyCount,
               ),
@@ -832,9 +835,11 @@ class _GeneratedFormState extends State<GeneratedForm> {
                         style: TextButton.styleFrom(
                           foregroundColor: Theme.of(context).colorScheme.error,
                         ),
-                        onPressed: (values[fieldKey].length > 0)
+                        onPressed: ((values[fieldKey] as List<dynamic>).isNotEmpty)
                             ? () {
-                                var temp = List.from(values[fieldKey]);
+                                var temp = List<dynamic>.from(
+                                  values[fieldKey] as List<dynamic>,
+                                );
                                 temp.removeAt(i);
                                 values[fieldKey] = List.from(temp);
                                 forceUpdateKeyCount++;
@@ -860,7 +865,7 @@ class _GeneratedFormState extends State<GeneratedForm> {
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: () {
-                        values[fieldKey].add(
+                        (values[fieldKey] as List<dynamic>).add(
                           getDefaultValuesFromFormItems(
                             (widget.items[r][e] as GeneratedFormSubForm).items,
                           ),

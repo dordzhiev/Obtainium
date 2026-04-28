@@ -536,8 +536,8 @@ Widget buildRepoRenameWarning({
               }
             },
           ),
-          if (app?.app.additionalSettings['about'] is String &&
-              app?.app.additionalSettings['about'].isNotEmpty)
+          if ((app?.app.additionalSettings['about'] as String?)?.isNotEmpty ==
+              true)
             Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -546,7 +546,9 @@ Widget buildRepoRenameWarning({
                   onLongPress: () {
                     Clipboard.setData(
                       ClipboardData(
-                        text: app?.app.additionalSettings['about'] ?? '',
+                        text:
+                            (app?.app.additionalSettings['about'] as String?) ??
+                            '',
                       ),
                     );
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -562,7 +564,7 @@ Widget buildRepoRenameWarning({
                       ),
                       textAlign: WrapAlignment.center,
                     ),
-                    data: app?.app.additionalSettings['about'],
+                    data: (app?.app.additionalSettings['about'] as String?) ?? '',
                     onTapLink: (text, href, title) {
                       if (href != null) {
                         launchUrlString(

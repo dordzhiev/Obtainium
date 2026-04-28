@@ -31,10 +31,11 @@ class Aptoide extends AppSource {
     String standardUrl, {
     Map<String, dynamic> additionalSettings = const {},
   }) async {
-    return (await getAppDetailsJSON(
+    final appDetails = await getAppDetailsJSON(
       standardUrl,
       additionalSettings,
-    ))['package'];
+    );
+    return appDetails['package'] as String?;
   }
 
   Future<Map<String, dynamic>> getAppDetailsJSON(
@@ -59,7 +60,13 @@ class Aptoide extends AppSource {
     if (res2.statusCode != 200) {
       throw getObtainiumHttpError(res);
     }
-    return jsonDecode(res2.body)?['nodes']?['meta']?['data'];
+    final decoded = jsonDecode(res2.body) as Map<String, dynamic>;
+    return Map<String, dynamic>.from(
+      (decoded['nodes'] as Map<String, dynamic>)['meta'] is Map<String, dynamic>
+          ? ((decoded['nodes'] as Map<String, dynamic>)['meta']
+              as Map<String, dynamic>)['data'] as Map<String, dynamic>
+          : ((decoded['nodes'] as Map)['meta'] as Map)['data'] as Map,
+    );
   }
 
   @override
@@ -68,11 +75,14 @@ class Aptoide extends AppSource {
     Map<String, dynamic> additionalSettings,
   ) async {
     var appDetails = await getAppDetailsJSON(standardUrl, additionalSettings);
-    String appName = appDetails['name'] ?? tr('app');
-    String author = appDetails['developer']?['name'] ?? name;
-    String? dateStr = appDetails['updated'];
-    String? version = appDetails['file']?['vername'];
-    String? apkUrl = appDetails['file']?['path'];
+    String appName = (appDetails['name'] as String?) ?? tr('app');
+    String author =
+        ((appDetails['developer'] as Map<String, dynamic>?)?['name'] as String?) ??
+        name;
+    String? dateStr = appDetails['updated'] as String?;
+    final fileDetails = appDetails['file'] as Map<String, dynamic>?;
+    String? version = fileDetails?['vername'] as String?;
+    String? apkUrl = fileDetails?['path'] as String?;
     if (version == null) {
       throw NoVersionError();
     }
