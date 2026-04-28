@@ -20,7 +20,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/io_client.dart';
-import 'package:obtainium/app_sources/directAPKLink.dart';
+import 'package:obtainium/app_sources/direct_apk_link.dart';
 import 'package:obtainium/app_sources/html.dart';
 import 'package:obtainium/components/generated_form.dart';
 import 'package:obtainium/components/generated_form_modal.dart';
@@ -69,12 +69,12 @@ class AppInMemory {
         : installedInfo?.signingInfo?.signingCertificateHistory;
 
     return signatures?.map((signature) {
-      final digest = sha256.convert(signature);
-      return digest.bytes
-        .map((b) => b.toRadixString(16).padLeft(2, '0').toUpperCase())
-        .join(':');
-      }).toList() ??
-      [];
+          final digest = sha256.convert(signature);
+          return digest.bytes
+              .map((b) => b.toRadixString(16).padLeft(2, '0').toUpperCase())
+              .join(':');
+        }).toList() ??
+        [];
   }
 }
 
@@ -511,8 +511,8 @@ Future<PackageInfo?> getInstalledInfo(
   if (packageName != null) {
     try {
       return await pm.getPackageInfo(
-          packageName: packageName,
-          flags: packageInfoFlags
+        packageName: packageName,
+        flags: packageInfoFlags,
       );
     } catch (e, stackTrace) {
       if (printErr) {
