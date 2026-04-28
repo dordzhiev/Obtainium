@@ -180,7 +180,9 @@ class AppsPageState extends State<AppsPage> {
       return appsProvider
           .checkUpdates()
           .catchError((e) {
-            showError(e is Map ? e['errors'] : e, context);
+            if (context.mounted) {
+              showError(e is Map ? e['errors'] : e, context);
+            }
             return <App>[];
           })
           .whenComplete(() {
@@ -456,7 +458,9 @@ class AppsPageState extends State<AppsPage> {
                       listedApps[appIndex].app.id,
                     ], globalNavigatorKey.currentContext)
                     .catchError((e) {
-                      showError(e, context);
+                      if (context.mounted) {
+                        showError(e, context);
+                      }
                       return <String>[];
                     });
               },
@@ -496,8 +500,8 @@ class AppsPageState extends State<AppsPage> {
                             ),
                             color:
                                 Theme.of(context).brightness == Brightness.dark
-                                ? Colors.white.withOpacity(0.4)
-                                : Colors.white.withOpacity(0.3),
+                                ? Colors.white.withValues(alpha: 0.4)
+                                : Colors.white.withValues(alpha: 0.3),
                             colorBlendMode: BlendMode.modulate,
                             gaplessPlayback: true,
                           ),
@@ -553,7 +557,7 @@ class AppsPageState extends State<AppsPage> {
 
     Widget buildRepoMovedRow() {
       final colorScheme = Theme.of(context).colorScheme;
-      final infoColor = colorScheme.primary.withOpacity(0.7);
+      final infoColor = colorScheme.primary.withValues(alpha: 0.7);
       final textColor = colorScheme.onSurfaceVariant;
       return Padding(
         padding: const EdgeInsets.only(top: 2),
@@ -653,7 +657,7 @@ class AppsPageState extends State<AppsPage> {
 
       var transparent = Theme.of(
         context,
-      ).colorScheme.surface.withAlpha(0).value;
+      ).colorScheme.surface.withAlpha(0).toARGB32();
       List<double> stops = [
         ...listedApps[index].app.categories.asMap().entries.map(
           (e) =>
@@ -684,10 +688,10 @@ class AppsPageState extends State<AppsPage> {
         child: ListTile(
           autofocus: index == 0 && settingsProvider.isTV,
           tileColor: listedApps[index].app.pinned
-              ? Colors.grey.withOpacity(0.1)
+              ? Colors.grey.withValues(alpha: 0.1)
               : Colors.transparent,
-          selectedTileColor: Theme.of(context).colorScheme.primary.withOpacity(
-            listedApps[index].app.pinned ? 0.2 : 0.1,
+          selectedTileColor: Theme.of(context).colorScheme.primary.withValues(
+            alpha: listedApps[index].app.pinned ? 0.2 : 0.1,
           ),
           selected: selectedAppIds
               .map((e) => e)
@@ -911,10 +915,13 @@ class AppsPageState extends State<AppsPage> {
                         globalNavigatorKey.currentContext,
                       )
                       .catchError((e) {
-                        showError(e, context);
+                        if (context.mounted) {
+                          showError(e, context);
+                        }
                         return <String>[];
                       })
                       .then((value) {
+                        if (!context.mounted) return;
                         if (value.isNotEmpty && shouldInstallUpdates) {
                           showMessage(tr('appsUpdated'), context);
                         }
@@ -957,7 +964,7 @@ class AppsPageState extends State<AppsPage> {
                 null;
           }
           if (cont) {
-            // ignore: use_build_context_synchronously
+            if (!context.mounted) return;
             await showDialog<Map<String, dynamic>?>(
               context: context,
               builder: (BuildContext ctx) {
@@ -990,6 +997,7 @@ class AppsPageState extends State<AppsPage> {
             stackTrace: stackTrace,
             message: 'Mass action failed in AppsPage',
           );
+          if (!context.mounted) return;
           showError(err, context);
         }
       };
@@ -1043,6 +1051,7 @@ class AppsPageState extends State<AppsPage> {
           );
         },
       ).whenComplete(() {
+        if (!context.mounted) return;
         Navigator.of(context).pop();
       });
     }
@@ -1086,9 +1095,11 @@ class AppsPageState extends State<AppsPage> {
                         urls += '${a.url}\n';
                       }
                       urls = urls.substring(0, urls.length - 1);
-                      Share.share(
-                        urls,
-                        subject: 'Obtainium - ${tr('appsString')}',
+                      SharePlus.instance.share(
+                        ShareParams(
+                          text: urls,
+                          subject: 'Obtainium - ${tr('appsString')}',
+                        ),
                       );
                       Navigator.of(context).pop();
                     },
@@ -1107,9 +1118,11 @@ class AppsPageState extends State<AppsPage> {
                               urls +=
                                   'https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/${Uri.encodeComponent(jsonEncode({'id': a.id, 'url': a.url, 'author': a.author, 'name': a.name, 'preferredApkIndex': a.preferredApkIndex, 'additionalSettings': jsonEncode(a.additionalSettings), 'overrideSource': a.overrideSource}))}\n\n';
                             }
-                            Share.share(
-                              urls,
-                              subject: 'Obtainium - ${tr('appsString')}',
+                            SharePlus.instance.share(
+                              ShareParams(
+                                text: urls,
+                                subject: 'Obtainium - ${tr('appsString')}',
+                              ),
                             );
                           },
                     child: Text(
@@ -1136,9 +1149,11 @@ class AppsPageState extends State<AppsPage> {
                               mimeType: 'application/json',
                               name: fn,
                             );
-                            Share.shareXFiles(
-                              [f],
-                              fileNameOverrides: ['$fn.json'],
+                            SharePlus.instance.share(
+                              ShareParams(
+                                files: [f],
+                                fileNameOverrides: ['$fn.json'],
+                              ),
                             );
                           },
                     child: Text(

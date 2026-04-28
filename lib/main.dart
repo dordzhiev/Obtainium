@@ -89,7 +89,7 @@ Future<void> loadTranslations() async {
 }
 
 @pragma('vm:entry-point')
-void backgroundFetchHeadlessTask(HeadlessTask task) async {
+void backgroundFetchHeadlessTask(HeadlessEvent task) async {
   String taskId = task.taskId;
   bool isTimeout = task.timeout;
   if (isTimeout) {
@@ -251,7 +251,7 @@ class _ObtainiumState extends State<Obtainium> {
     return null;
   }
 
-  stopForegroundService() async {
+  Future<dynamic> stopForegroundService() async {
     if (await FlutterForegroundTask.isRunningService) {
       return FlutterForegroundTask.stopService();
     }

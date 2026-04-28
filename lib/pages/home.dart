@@ -358,7 +358,8 @@ class _HomePageState extends State<HomePage> {
       child: pages.elementAt(currentIndex).widget,
     );
 
-    return WillPopScope(
+    return PopScope(
+      canPop: false,
       child: Scaffold(
         backgroundColor: Theme.of(context).colorScheme.surface,
         body: settingsProvider.isTV
@@ -420,11 +421,15 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
       ),
-      onWillPop: () async {
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) {
+          return;
+        }
         if (isLinkActivity &&
             selectedIndexHistory.length == 1 &&
             selectedIndexHistory.last == 1) {
-          return true;
+          Navigator.of(context).pop();
+          return;
         }
         setIsReversing(
           selectedIndexHistory.length >= 2
@@ -435,10 +440,14 @@ class _HomePageState extends State<HomePage> {
           setState(() {
             selectedIndexHistory.removeLast();
           });
-          return false;
+          return;
         }
-        return !(pages[0].widget.key as GlobalKey<AppsPageState>).currentState!
+        bool shouldPop = !(pages[0].widget.key as GlobalKey<AppsPageState>)
+            .currentState!
             .clearSelected();
+        if (shouldPop && mounted) {
+          Navigator.of(context).pop();
+        }
       },
     );
   }

@@ -155,7 +155,7 @@ class _ImportExportPageState extends State<ImportExportPage> {
                 appsProvider.apps.forEach((key, value) {
                   for (var c in value.app.categories) {
                     if (!cats.containsKey(c)) {
-                      cats[c] = generateRandomLightColor().value;
+                      cats[c] = generateRandomLightColor().toARGB32();
                     }
                   }
                 });
@@ -881,8 +881,7 @@ class _SelectionModalState extends State<SelectionModal> {
                       },
                       child: descriptionText,
                     ),
-              leading: Radio<String>(
-                value: entry.key,
+              leading: RadioGroup<String>(
                 groupValue: selectedEntries.isEmpty
                     ? null
                     : selectedEntries.first.key.key,
@@ -895,6 +894,7 @@ class _SelectionModalState extends State<SelectionModal> {
                     });
                   }
                 },
+                child: Radio<String>(value: entry.key),
               ),
             );
 
