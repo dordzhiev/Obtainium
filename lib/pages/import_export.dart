@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -35,9 +36,7 @@ class _ImportExportPageState extends State<ImportExportPage> {
     final outlineButtonStyle = ButtonStyle(
       shape: WidgetStateProperty.all(
         StadiumBorder(
-          side: BorderSide(
-            color: Theme.of(context).colorScheme.primary,
-          ),
+          side: BorderSide(color: Theme.of(context).colorScheme.primary),
         ),
       ),
     );
@@ -85,6 +84,9 @@ class _ImportExportPageState extends State<ImportExportPage> {
           appsProvider
               .addAppsByURL(urls)
               .then((errors) {
+                if (!context.mounted) {
+                  return;
+                }
                 if (errors.isEmpty) {
                   showMessage(
                     tr(
@@ -94,7 +96,7 @@ class _ImportExportPageState extends State<ImportExportPage> {
                     context,
                   );
                 } else {
-                  showDialog(
+                  showDialog<void>(
                     context: context,
                     builder: (BuildContext ctx) {
                       return ImportErrorDialog(
@@ -105,10 +107,15 @@ class _ImportExportPageState extends State<ImportExportPage> {
                   );
                 }
               })
-              .catchError((e) {
-                showError(e, context);
+              .catchError((Object e) {
+                if (context.mounted) {
+                  showError(e, context);
+                }
               })
               .whenComplete(() {
+                if (!mounted) {
+                  return;
+                }
                 setState(() {
                   importInProgress = false;
                 });
@@ -118,154 +125,257 @@ class _ImportExportPageState extends State<ImportExportPage> {
     }
 
     runObtainiumExport({bool pickOnly = false}) async {
-      HapticFeedback.selectionClick();
-      appsProvider
-          .export(
-            pickOnly:
-                pickOnly || (await settingsProvider.getExportDir()) == null,
-            sp: settingsProvider,
-          )
-          .then((String? result) {
-            if (result != null) {
-              showMessage(tr('exportedTo', args: [result]), context);
-            }
-          })
-          .catchError((e) {
-            showError(e, context);
-          });
+      unawaited(HapticFeedback.selectionClick());
+      unawaited(
+        appsProvider
+            .export(
+              pickOnly:
+                  pickOnly || (await settingsProvider.getExportDir()) == null,
+              sp: settingsProvider,
+            )
+            .then((String? result) {
+              if (result != null && context.mounted) {
+                showMessage(tr('exportedTo', args: [result]), context);
+              }
+            })
+            .catchError((Object e) {
+              if (context.mounted) {
+                showError(e, context);
+              }
+            }),
+      );
     }
 
     runObtainiumImport() {
       HapticFeedback.selectionClick();
-      FilePicker.pickFiles()
-          .then((result) {
-            setState(() {
-              importInProgress = true;
-            });
-            if (result != null) {
-              final String data = File(result.files.single.path!).readAsStringSync();
-              try {
-                jsonDecode(data);
-              } catch (e) {
-                throw ObtainiumError(tr('invalidInput'));
-              }
-              appsProvider.import(data).then((value) {
-                final cats = settingsProvider.categories;
-                appsProvider.apps.forEach((key, value) {
-                  for (var c in value.app.categories) {
-                    if (!cats.containsKey(c)) {
-                      cats[c] = generateRandomLightColor().toARGB32();
-                    }
-                  }
-                });
-                appsProvider.addMissingCategories(settingsProvider);
-                showMessage(
-                  '${tr('importedX', args: [plural('apps', value.key.length).toLowerCase()])}${value.value ? ' + ${tr('settings').toLowerCase()}' : ''}',
-                  context,
-                );
-              });
-            } else {
-              // User canceled the picker
-            }
-          })
-          .catchError((e) {
-            showError(e, context);
-          })
-          .whenComplete(() {
-            setState(() {
-              importInProgress = false;
-            });
-          });
-    }
-
-    runUrlImport() {
-      FilePicker.pickFiles().then((result) {
-        if (result != null) {
-          urlListImport(
-            overrideInitValid: true,
-            initValue: RegExp('https?://[^"]+')
-                .allMatches(File(result.files.single.path!).readAsStringSync())
-                .map((e) => e.input.substring(e.start, e.end))
-                .toSet()
-                .toList()
-                .where((url) {
-                  try {
-                    sourceProvider.getSource(url);
-                    return true;
-                  } catch (e) {
-                    return false;
-                  }
-                })
-                .join('\n'),
-          );
-        }
-      });
-    }
-
-    runSourceSearch(AppSource source) {
-      () async {
-            final values = await showDialog<Map<String, dynamic>?>(
-              context: context,
-              builder: (BuildContext ctx) {
-                return GeneratedFormModal(
-                  title: tr('searchX', args: [source.name]),
-                  items: [
-                    [
-                      GeneratedFormTextField(
-                        'searchQuery',
-                        label: tr('searchQuery'),
-                        required: source.name != FDroidRepo().name,
-                      ),
-                    ],
-                    ...source.searchQuerySettingFormItems.map((e) => [e]),
-                    [
-                      GeneratedFormTextField(
-                        'url',
-                        label: source.hosts.isNotEmpty
-                            ? tr('overrideSource')
-                            : plural('url', 1).substring(2),
-                        defaultValue: source.hosts.isNotEmpty
-                            ? source.hosts[0]
-                            : '',
-                      ),
-                    ],
-                  ],
-                );
-              },
-            );
-            if (values != null) {
+      unawaited(
+        FilePicker.pickFiles()
+            .then((result) {
               setState(() {
                 importInProgress = true;
               });
-              if (source.hosts.isEmpty || values['url'] != source.hosts[0]) {
-                source = sourceProvider.getSource(
-                  values['url'] as String,
-                  overrideSource: source.runtimeType.toString(),
-                );
-              }
-              final urlsWithDescriptions = await source.search(
-                values['searchQuery'] as String,
-                querySettings: values,
-              );
-              if (urlsWithDescriptions.isNotEmpty) {
-                final selectedUrls =
-                    // ignore: use_build_context_synchronously
-                    await showDialog<List<String>?>(
-                      context: context,
-                      builder: (BuildContext ctx) {
-                        return SelectionModal(
-                          entries: urlsWithDescriptions,
-                          selectedByDefault: false,
-                        );
-                      },
-                    );
-                if (selectedUrls != null && selectedUrls.isNotEmpty) {
-                  final errors = await appsProvider.addAppsByURL(
-                    selectedUrls,
-                    sourceOverride: source,
+              if (result != null) {
+                final String data = File(
+                  result.files.single.path!,
+                ).readAsStringSync();
+                try {
+                  jsonDecode(data);
+                } catch (e) {
+                  throw ObtainiumError(tr('invalidInput'));
+                }
+                appsProvider.import(data).then((value) {
+                  if (!context.mounted) {
+                    return;
+                  }
+                  final cats = settingsProvider.categories;
+                  appsProvider.apps.forEach((key, value) {
+                    for (var c in value.app.categories) {
+                      if (!cats.containsKey(c)) {
+                        cats[c] = generateRandomLightColor().toARGB32();
+                      }
+                    }
+                  });
+                  appsProvider.addMissingCategories(settingsProvider);
+                  showMessage(
+                    '${tr('importedX', args: [plural('apps', value.key.length).toLowerCase()])}${value.value ? ' + ${tr('settings').toLowerCase()}' : ''}',
+                    context,
                   );
+                });
+              } else {
+                // User canceled the picker
+              }
+            })
+            .catchError((Object e) {
+              if (context.mounted) {
+                showError(e, context);
+              }
+            })
+            .whenComplete(() {
+              if (!mounted) {
+                return;
+              }
+              setState(() {
+                importInProgress = false;
+              });
+            }),
+      );
+    }
+
+    runUrlImport() {
+      unawaited(
+        FilePicker.pickFiles().then((result) {
+          if (result != null) {
+            urlListImport(
+              overrideInitValid: true,
+              initValue: RegExp('https?://[^"]+')
+                  .allMatches(
+                    File(result.files.single.path!).readAsStringSync(),
+                  )
+                  .map((e) => e.input.substring(e.start, e.end))
+                  .toSet()
+                  .toList()
+                  .where((url) {
+                    try {
+                      sourceProvider.getSource(url);
+                      return true;
+                    } catch (e) {
+                      return false;
+                    }
+                  })
+                  .join('\n'),
+            );
+          }
+        }),
+      );
+    }
+
+    runSourceSearch(AppSource source) {
+      unawaited(
+        () async {
+              final values = await showDialog<Map<String, dynamic>?>(
+                context: context,
+                builder: (BuildContext ctx) {
+                  return GeneratedFormModal(
+                    title: tr('searchX', args: [source.name]),
+                    items: [
+                      [
+                        GeneratedFormTextField(
+                          'searchQuery',
+                          label: tr('searchQuery'),
+                          required: source.name != FDroidRepo().name,
+                        ),
+                      ],
+                      ...source.searchQuerySettingFormItems.map((e) => [e]),
+                      [
+                        GeneratedFormTextField(
+                          'url',
+                          label: source.hosts.isNotEmpty
+                              ? tr('overrideSource')
+                              : plural('url', 1).substring(2),
+                          defaultValue: source.hosts.isNotEmpty
+                              ? source.hosts[0]
+                              : '',
+                        ),
+                      ],
+                    ],
+                  );
+                },
+              );
+              if (values != null) {
+                setState(() {
+                  importInProgress = true;
+                });
+                if (source.hosts.isEmpty || values['url'] != source.hosts[0]) {
+                  source = sourceProvider.getSource(
+                    values['url'] as String,
+                    overrideSource: source.runtimeType.toString(),
+                  );
+                }
+                final urlsWithDescriptions = await source.search(
+                  values['searchQuery'] as String,
+                  querySettings: values,
+                );
+                if (urlsWithDescriptions.isNotEmpty) {
+                  final selectedUrls = !context.mounted
+                      ? null
+                      : await showDialog<List<String>?>(
+                          context: context,
+                          builder: (BuildContext ctx) {
+                            return SelectionModal(
+                              entries: urlsWithDescriptions,
+                              selectedByDefault: false,
+                            );
+                          },
+                        );
+                  if (selectedUrls != null && selectedUrls.isNotEmpty) {
+                    final errors = await appsProvider.addAppsByURL(
+                      selectedUrls,
+                      sourceOverride: source,
+                    );
+                    if (!context.mounted) {
+                      return;
+                    }
+                    if (errors.isEmpty) {
+                      showMessage(
+                        tr(
+                          'importedX',
+                          args: [
+                            plural('apps', selectedUrls.length).toLowerCase(),
+                          ],
+                        ),
+                        context,
+                      );
+                    } else {
+                      unawaited(
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext ctx) {
+                            return ImportErrorDialog(
+                              urlsLength: selectedUrls.length,
+                              errors: errors,
+                            );
+                          },
+                        ),
+                      );
+                    }
+                  }
+                } else {
+                  throw ObtainiumError(tr('noResults'));
+                }
+              }
+            }()
+            .catchError((Object e) {
+              if (context.mounted) {
+                showError(e, context);
+              }
+            })
+            .whenComplete(() {
+              if (!mounted) {
+                return;
+              }
+              setState(() {
+                importInProgress = false;
+              });
+            }),
+      );
+    }
+
+    runMassSourceImport(MassAppUrlSource source) {
+      unawaited(
+        () async {
+              final values = await showDialog<Map<String, dynamic>?>(
+                context: context,
+                builder: (BuildContext ctx) {
+                  return GeneratedFormModal(
+                    title: tr('importX', args: [source.name]),
+                    items: source.requiredArgs
+                        .map((e) => [GeneratedFormTextField(e, label: e)])
+                        .toList(),
+                  );
+                },
+              );
+              if (values != null) {
+                setState(() {
+                  importInProgress = true;
+                });
+                final urlsWithDescriptions = await source
+                    .getUrlsWithDescriptions(
+                      values.values.map((e) => e.toString()).toList(),
+                    );
+                final selectedUrls = !context.mounted
+                    ? null
+                    : await showDialog<List<String>?>(
+                        context: context,
+                        builder: (BuildContext ctx) {
+                          return SelectionModal(entries: urlsWithDescriptions);
+                        },
+                      );
+                if (selectedUrls != null) {
+                  final errors = await appsProvider.addAppsByURL(selectedUrls);
+                  if (!context.mounted) {
+                    return;
+                  }
                   if (errors.isEmpty) {
-                    // ignore: use_build_context_synchronously
                     showMessage(
                       tr(
                         'importedX',
@@ -276,95 +386,35 @@ class _ImportExportPageState extends State<ImportExportPage> {
                       context,
                     );
                   } else {
-                    // ignore: use_build_context_synchronously
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext ctx) {
-                        return ImportErrorDialog(
-                          urlsLength: selectedUrls.length,
-                          errors: errors,
-                        );
-                      },
+                    unawaited(
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext ctx) {
+                          return ImportErrorDialog(
+                            urlsLength: selectedUrls.length,
+                            errors: errors,
+                          );
+                        },
+                      ),
                     );
                   }
                 }
-              } else {
-                throw ObtainiumError(tr('noResults'));
               }
-            }
-          }()
-          .catchError((e) {
-            showError(e, context);
-          })
-          .whenComplete(() {
-            setState(() {
-              importInProgress = false;
-            });
-          });
-    }
-
-    runMassSourceImport(MassAppUrlSource source) {
-      () async {
-            final values = await showDialog<Map<String, dynamic>?>(
-              context: context,
-              builder: (BuildContext ctx) {
-                return GeneratedFormModal(
-                  title: tr('importX', args: [source.name]),
-                  items: source.requiredArgs
-                      .map((e) => [GeneratedFormTextField(e, label: e)])
-                      .toList(),
-                );
-              },
-            );
-            if (values != null) {
+            }()
+            .catchError((Object e) {
+              if (context.mounted) {
+                showError(e, context);
+              }
+            })
+            .whenComplete(() {
+              if (!mounted) {
+                return;
+              }
               setState(() {
-                importInProgress = true;
+                importInProgress = false;
               });
-              final urlsWithDescriptions = await source.getUrlsWithDescriptions(
-                values.values.map((e) => e.toString()).toList(),
-              );
-              final selectedUrls =
-                  // ignore: use_build_context_synchronously
-                  await showDialog<List<String>?>(
-                    context: context,
-                    builder: (BuildContext ctx) {
-                      return SelectionModal(entries: urlsWithDescriptions);
-                    },
-                  );
-              if (selectedUrls != null) {
-                final errors = await appsProvider.addAppsByURL(selectedUrls);
-                if (errors.isEmpty) {
-                  // ignore: use_build_context_synchronously
-                  showMessage(
-                    tr(
-                      'importedX',
-                      args: [plural('apps', selectedUrls.length).toLowerCase()],
-                    ),
-                    context,
-                  );
-                } else {
-                  // ignore: use_build_context_synchronously
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext ctx) {
-                      return ImportErrorDialog(
-                        urlsLength: selectedUrls.length,
-                        errors: errors,
-                      );
-                    },
-                  );
-                }
-              }
-            }
-          }()
-          .catchError((e) {
-            showError(e, context);
-          })
-          .whenComplete(() {
-            setState(() {
-              importInProgress = false;
-            });
-          });
+            }),
+      );
     }
 
     final sourceStrings = <String, List<String>>{};
@@ -477,10 +527,10 @@ class _ImportExportPageState extends State<ImportExportPage> {
                                               true;
                                         }
                                         if (value['exportSettings'] != null) {
-                                          settingsProvider.exportSettings =
-                                              int.parse(
-                                                value['exportSettings'] as String,
-                                              );
+                                          settingsProvider
+                                              .exportSettings = int.parse(
+                                            value['exportSettings'] as String,
+                                          );
                                         }
                                       }
                                     },
@@ -723,7 +773,8 @@ class _SelectionModalState extends State<SelectionModal> {
   @override
   Widget build(BuildContext context) {
     final isTV = context.read<SettingsProvider>().isTV;
-    final Map<MapEntry<String, List<String>>, bool> filteredEntrySelections = {};
+    final Map<MapEntry<String, List<String>>, bool> filteredEntrySelections =
+        {};
     entrySelections.forEach((key, value) {
       final searchableText = key.value.isEmpty ? key.key : key.value[0];
       if (filterRegex.isEmpty || RegExp(filterRegex).hasMatch(searchableText)) {
@@ -746,7 +797,9 @@ class _SelectionModalState extends State<SelectionModal> {
       if (widget.onlyOneSelectionAllowed) {
         return SizedBox.shrink();
       }
-      final noneSelected = entrySelections.values.where((v) => v == true).isEmpty;
+      final noneSelected = entrySelections.values
+          .where((v) => v == true)
+          .isEmpty;
       return noneSelected
           ? TextButton(
               style: const ButtonStyle(visualDensity: VisualDensity.compact),

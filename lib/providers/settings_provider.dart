@@ -1,5 +1,6 @@
 // Exposes functions used to save/load app settings
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:easy_localization/easy_localization.dart';
@@ -186,9 +187,11 @@ class SettingsProvider with ChangeNotifier {
   Future<bool> getInstallPermission({bool enforce = false}) async {
     while (!(await Permission.requestInstallPackages.isGranted)) {
       // Explicit request as InstallPlugin request sometimes bugged
-      Fluttertoast.showToast(
-        msg: tr('pleaseAllowInstallPerm'),
-        toastLength: Toast.LENGTH_LONG,
+      unawaited(
+        Fluttertoast.showToast(
+          msg: tr('pleaseAllowInstallPerm'),
+          toastLength: Toast.LENGTH_LONG,
+        ),
       );
       if ((await Permission.requestInstallPackages.request()) ==
           PermissionStatus.granted) {
@@ -433,7 +436,7 @@ class SettingsProvider with ChangeNotifier {
       if (!(await saf.canRead(uri) ?? false) ||
           !(await saf.canWrite(uri) ?? false)) {
         uri = null;
-        prefs?.remove('exportDir');
+        await prefs?.remove('exportDir');
         notifyListeners();
       }
       return uri;
@@ -451,9 +454,9 @@ class SettingsProvider with ChangeNotifier {
     }
     if (currentOneWayDataSyncDir?.path != newOneWayDataSyncDir?.path) {
       if (newOneWayDataSyncDir == null) {
-        prefs?.remove('exportDir');
+        await prefs?.remove('exportDir');
       } else {
-        prefs?.setString('exportDir', newOneWayDataSyncDir.toString());
+        await prefs?.setString('exportDir', newOneWayDataSyncDir.toString());
       }
       notifyListeners();
     }

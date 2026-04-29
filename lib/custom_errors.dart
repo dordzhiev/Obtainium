@@ -127,7 +127,7 @@ void showMessage(dynamic e, BuildContext context, {bool isError = false}) {
       context,
     ).showSnackBar(SnackBar(content: Text(e.toString())));
   } else {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (BuildContext ctx) {
         return AlertDialog(

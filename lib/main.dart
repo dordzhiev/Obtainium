@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -94,11 +95,11 @@ void backgroundFetchHeadlessTask(HeadlessEvent task) async {
   final bool isTimeout = task.timeout;
   if (isTimeout) {
     AppLogger.warn('BG update task timed out.');
-    BackgroundFetch.finish(taskId);
+    unawaited(BackgroundFetch.finish(taskId));
     return;
   }
   await bgUpdateCheck(taskId, null);
-  BackgroundFetch.finish(taskId);
+  unawaited(BackgroundFetch.finish(taskId));
 }
 
 @pragma('vm:entry-point')
@@ -112,12 +113,12 @@ class MyTaskHandler extends TaskHandler {
   @override
   Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
     AppLogger.info('onStart(starter: ${starter.name})');
-    bgUpdateCheck('bg_check', null);
+    unawaited(bgUpdateCheck('bg_check', null));
   }
 
   @override
   void onRepeatEvent(DateTime timestamp) {
-    bgUpdateCheck('bg_check', null);
+    unawaited(bgUpdateCheck('bg_check', null));
   }
 
   @override
@@ -150,7 +151,7 @@ void main() async {
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(systemNavigationBarColor: Colors.transparent),
     );
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   }
   final np = NotificationsProvider();
   await np.initialize();
@@ -171,7 +172,7 @@ void main() async {
       ),
     ),
   );
-  BackgroundFetch.registerHeadlessTask(backgroundFetchHeadlessTask);
+  unawaited(BackgroundFetch.registerHeadlessTask(backgroundFetchHeadlessTask));
 }
 
 class Obtainium extends StatefulWidget {
@@ -280,11 +281,13 @@ class _ObtainiumState extends State<Obtainium> {
       ),
       (String taskId) async {
         await bgUpdateCheck(taskId, null);
-        BackgroundFetch.finish(taskId);
+        await BackgroundFetch.finish(taskId);
       },
       (String taskId) async {
-        context.read<LogsProvider>().add('BG update task timed out.');
-        BackgroundFetch.finish(taskId);
+        unawaited(
+          context.read<LogsProvider>().add('BG update task timed out.'),
+        );
+        await BackgroundFetch.finish(taskId);
       },
     );
     if (!mounted) return;
@@ -340,9 +343,9 @@ class _ObtainiumState extends State<Obtainium> {
                   ], onlyIfExists: false);
                 }
               })
-              .catchError((err) {
+              .catchError((Object err) {
                 AppLogger.error(
-                  err as Object,
+                  err,
                   message:
                       'Failed to preload Obtainium app metadata on first run',
                 );

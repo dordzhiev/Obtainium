@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -120,8 +122,10 @@ class AddAppPageState extends State<AddAppPage> {
       final useTrackOnly = userPickedTrackOnly || pickedSource!.enforceTrackOnly;
       if (useTrackOnly &&
           (!settingsProvider.hideTrackOnlyWarning || ignoreHideSetting)) {
-        // ignore: use_build_context_synchronously
-        final values = await showDialog(
+        if (!context.mounted) {
+          return false;
+        }
+        final values = await showDialog<Map<String, dynamic>?>(
           context: context,
           builder: (BuildContext ctx) {
             return GeneratedFormModal(
@@ -152,9 +156,11 @@ class AddAppPageState extends State<AddAppPage> {
     getReleaseDateAsVersionConfirmationIfNeeded(
       bool userPickedTrackOnly,
     ) async {
+      if (!context.mounted) {
+        return false;
+      }
       return (!(additionalSettings['releaseDateAsVersion'] == true &&
-          // ignore: use_build_context_synchronously
-          await showDialog(
+          await showDialog<Map<String, dynamic>?>(
                 context: context,
                 builder: (BuildContext ctx) {
                   return GeneratedFormModal(
@@ -189,7 +195,9 @@ class AddAppPageState extends State<AddAppPage> {
           );
           // Only download the APK here if you need to for the package ID
           if (isTempId(app) && app.additionalSettings['trackOnly'] != true) {
-            // ignore: use_build_context_synchronously
+            if (!context.mounted) {
+              return;
+            }
             final apkUrl = await appsProvider.confirmAppFileUrl(
               app,
               context,
@@ -202,7 +210,6 @@ class AddAppPageState extends State<AddAppPage> {
                 .map((e) => e.value)
                 .toList()
                 .indexOf(apkUrl.value);
-            // ignore: use_build_context_synchronously
             final downloadedArtifact = await appsProvider.downloadApp(
               app,
               globalNavigatorKey.currentContext,
@@ -228,9 +235,11 @@ class AddAppPageState extends State<AddAppPage> {
           await appsProvider.saveApps([app], onlyIfExists: false);
         }
         if (app != null) {
-          Navigator.push(
-            globalNavigatorKey.currentContext ?? context,
-            MaterialPageRoute(builder: (context) => AppPage(appId: app!.id)),
+          unawaited(
+            Navigator.push(
+              globalNavigatorKey.currentContext ?? context,
+              MaterialPageRoute(builder: (context) => AppPage(appId: app!.id)),
+            ),
           );
         }
       } catch (e, stackTrace) {
@@ -239,14 +248,18 @@ class AddAppPageState extends State<AddAppPage> {
           stackTrace: stackTrace,
           message: 'Failed while adding/updating app from AddAppPage',
         );
-        showError(e, context);
+        if (context.mounted) {
+          showError(e, context);
+        }
       } finally {
-        setState(() {
-          gettingAppInfo = false;
-          if (resetUserInputAfter) {
-            changeUserInput('', false, true);
-          }
-        });
+        if (mounted) {
+          setState(() {
+            gettingAppInfo = false;
+            if (resetUserInputAfter) {
+              changeUserInput('', false, true);
+            }
+          });
+        }
       }
     }
 
@@ -409,7 +422,9 @@ class AddAppPageState extends State<AddAppPage> {
                         stackTrace: stackTrace,
                       );
                       err.unexpected = true;
-                      showError(err, context);
+                      if (context.mounted) {
+                        showError(err, context);
+                      }
                       return null;
                     }
                   }
@@ -435,9 +450,9 @@ class AddAppPageState extends State<AddAppPage> {
           if (res.isEmpty) {
             throw ObtainiumError(tr('noResults'));
           }
+          if (!context.mounted) return;
           final List<String>? selectedUrls = res.isEmpty
               ? []
-              // ignore: use_build_context_synchronously
               : await showDialog<List<String>?>(
                   context: context,
                   builder: (BuildContext ctx) {
@@ -465,11 +480,15 @@ class AddAppPageState extends State<AddAppPage> {
           stackTrace: stackTrace,
           message: 'Failed during source search flow in AddAppPage',
         );
-        showError(e, context);
+        if (context.mounted) {
+          showError(e, context);
+        }
       } finally {
-        setState(() {
-          searching = false;
-        });
+        if (mounted) {
+          setState(() {
+            searching = false;
+          });
+        }
       }
     }
 
@@ -678,7 +697,7 @@ class AddAppPageState extends State<AddAppPage> {
         children: [
           InkWell(
             onTap: () {
-              showDialog(
+              showDialog<void>(
                 context: context,
                 builder: (context) {
                   return GeneratedFormModal(

@@ -351,10 +351,13 @@ class HTML extends AppSource {
   }) async {
     if (additionalSettings.isNotEmpty) {
       if (additionalSettings['requestHeader']?.isNotEmpty != true) {
-        additionalSettings['requestHeader'] = [];
+        additionalSettings['requestHeader'] = <Map<String, dynamic>>[];
       }
       additionalSettings['requestHeader'] = additionalSettings['requestHeader']
-          .where((l) => (l['requestHeader'] as String?)?.isNotEmpty == true)
+          .where(
+            (Map<String, dynamic> l) =>
+                (l['requestHeader'] as String?)?.isNotEmpty == true,
+          )
           .toList();
       final Map<String, String> requestHeaders = {};
       for (int i = 0;
@@ -382,16 +385,13 @@ class HTML extends AppSource {
   ) async {
     var currentUrl = standardUrl;
     if (additionalSettings['intermediateLink']?.isNotEmpty != true) {
-      additionalSettings['intermediateLink'] = [];
+      additionalSettings['intermediateLink'] = <Map<String, dynamic>>[];
     }
     additionalSettings['intermediateLink'] =
         additionalSettings['intermediateLink']
             .where(
-              (l) =>
-                  ((l as Map<String, dynamic>)['customLinkFilterRegex']
-                          as String?)
-                      ?.isNotEmpty ==
-                  true,
+              (Map<String, dynamic> l) =>
+                  (l['customLinkFilterRegex'] as String?)?.isNotEmpty == true,
             )
             .toList();
     for (int i = 0;

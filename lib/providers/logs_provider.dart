@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:obtainium/core/logging/app_logger.dart';
@@ -95,12 +97,14 @@ create table if not exists $logTable (
       whereArgs: where.value,
     );
     if (res > 0) {
-      add(
-        plural(
-          'clearedNLogsBeforeXAfterY',
-          res,
-          namedArgs: {'before': before.toString(), 'after': after.toString()},
-          name: 'n',
+      unawaited(
+        add(
+          plural(
+            'clearedNLogsBeforeXAfterY',
+            res,
+            namedArgs: {'before': before.toString(), 'after': after.toString()},
+            name: 'n',
+          ),
         ),
       );
     }

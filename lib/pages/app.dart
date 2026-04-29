@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -219,7 +221,7 @@ Widget buildRepoRenameWarning({
                           pendingUrl,
                         );
                         if (mounted) {
-                          onUpdate(appValue.app.id);
+                          await onUpdate(appValue.app.id);
                         }
                       },
                       child: Text(tr('updateUrl')),
@@ -282,7 +284,7 @@ Widget buildRepoRenameWarning({
             appsProvider.apps[id]?.app.installedVersion =
                 appsProvider.apps[id]?.app.latestVersion;
           }
-          appsProvider.saveApps([appsProvider.apps[id]!.app]);
+          await appsProvider.saveApps([appsProvider.apps[id]!.app]);
         }
       } catch (err, stackTrace) {
         if (err is RepositoryRenamedError && context.mounted) {
@@ -441,7 +443,9 @@ Widget buildRepoRenameWarning({
                           message:
                               'Failed to download additional assets for app ${app?.app.id}',
                         );
-                        showError(e, context);
+                        if (context.mounted) {
+                          showError(e, context);
+                        }
                       }
                     },
               child: Row(
@@ -695,7 +699,7 @@ Widget buildRepoRenameWarning({
         : Container();
 
     showMarkUpdatedDialog() {
-      return showDialog(
+      return showDialog<void>(
         context: context,
         builder: (BuildContext ctx) {
           return AlertDialog(
@@ -755,8 +759,9 @@ Widget buildRepoRenameWarning({
         app.app.additionalSettings = values;
         if (source?.enforceTrackOnly == true) {
           app.app.additionalSettings['trackOnly'] = true;
-          // ignore: use_build_context_synchronously
-          showMessage(tr('appsFromSourceAreTrackOnly'), context);
+          if (context.mounted) {
+            showMessage(tr('appsFromSourceAreTrackOnly'), context);
+          }
         }
         final versionDetectionEnabled =
             app.app.additionalSettings['versionDetection'] == true &&
@@ -801,16 +806,16 @@ Widget buildRepoRenameWarning({
                 final successMessage = app?.app.installedVersion == null
                     ? tr('installed')
                     : tr('appsUpdated');
-                HapticFeedback.heavyImpact();
+                unawaited(HapticFeedback.heavyImpact());
                 final res = await appsProvider.downloadAndInstallLatestApps(
                   app?.app.id != null ? [app!.app.id] : [],
                   globalNavigatorKey.currentContext,
                 );
                 if (res.isNotEmpty && !trackOnly) {
-                  // ignore: use_build_context_synchronously
+                  if (!context.mounted) return;
                   showMessage(successMessage, context);
                 }
-                if (res.isNotEmpty && mounted) {
+                if (res.isNotEmpty && context.mounted) {
                   Navigator.of(context).pop();
                 }
               } catch (e, stackTrace) {
@@ -819,8 +824,9 @@ Widget buildRepoRenameWarning({
                   stackTrace: stackTrace,
                   message: 'Failed to confirm install/update from AppPage',
                 );
-                // ignore: use_build_context_synchronously
-                showError(e, context);
+                if (context.mounted) {
+                  showError(e, context);
+                }
               }
             }
           : null,
@@ -873,7 +879,7 @@ Widget buildRepoRenameWarning({
                 if (app != null && showAppWebpageFinal)
                   IconButton(
                     onPressed: () {
-                      showDialog(
+                      showDialog<void>(
                         context: context,
                         builder: (BuildContext ctx) {
                           return AlertDialog(
@@ -932,7 +938,7 @@ Widget buildRepoRenameWarning({
                                 app != null ? [app.app] : [],
                               )
                               .then((value) {
-                                if (value == true) {
+                                if (value == true && context.mounted) {
                                   Navigator.of(context).pop();
                                 }
                               });
@@ -980,7 +986,7 @@ Widget buildRepoRenameWarning({
               ),
         onRefresh: () async {
           if (app != null) {
-            getUpdate(app.app.id);
+            await getUpdate(app.app.id);
           }
         },
       ),

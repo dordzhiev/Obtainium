@@ -11,12 +11,12 @@ class NativeFeatures {
     return ByteData.view(bytes.buffer);
   }
 
-  static Future loadSystemFont() async {
+  static Future<void> loadSystemFont() async {
     if (_systemFontLoaded) return;
     final fontLoader = FontLoader('SystemFont');
     final fontFilePath = await AndroidSystemFont().getFilePath();
     fontLoader.addFont(_readFileBytes(fontFilePath!));
-    fontLoader.load();
+    await fontLoader.load();
     _systemFontLoaded = true;
   }
 }

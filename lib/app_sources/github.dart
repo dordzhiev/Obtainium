@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:easy_localization/easy_localization.dart';
@@ -239,8 +240,10 @@ class GitHub extends AppSource {
               return appIds.first;
             }
           } catch (err) {
-            LogsProvider().add(
-              'Error parsing build.gradle from ${res.request!.url.toString()}: ${err.toString()}',
+            unawaited(
+              LogsProvider().add(
+                'Error parsing build.gradle from ${res.request!.url.toString()}: ${err.toString()}',
+              ),
             );
           }
         }
@@ -408,7 +411,7 @@ class GitHub extends AppSource {
     String requestUrl,
     String standardUrl,
     Map<String, dynamic> additionalSettings, {
-    Function(Response)? onHttpErrorCode,
+    void Function(Response)? onHttpErrorCode,
   }) async {
     final SettingsProvider settingsProvider = SettingsProvider();
     await settingsProvider.initializeSettings();
@@ -767,7 +770,7 @@ class GitHub extends AppSource {
     String query,
     String requestUrl,
     String rootProp, {
-    Function(Response)? onHttpErrorCode,
+    void Function(Response)? onHttpErrorCode,
     Map<String, dynamic> querySettings = const {},
   }) async {
     final Response res = await sourceRequest(requestUrl, {});

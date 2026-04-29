@@ -200,7 +200,9 @@ Map<String, dynamic> appJSONCompatibilityModifiers(Map<String, dynamic> json) {
     }
     if (((additionalSettings['intermediateLink'] as List?)?.length ?? 0) > 0) {
       additionalSettings['intermediateLink'] =
-          additionalSettings['intermediateLink'].where((e) {
+          additionalSettings['intermediateLink'].where((
+            Map<String, dynamic> e,
+          ) {
             return e['customLinkFilterRegex']?.isNotEmpty == true;
           }).toList();
     }
@@ -687,7 +689,6 @@ abstract class AppSource {
   }) async {
     final sp = SettingsProvider();
     await sp.initializeSettings();
-    getSourceConfigValues(additionalSettings, sp);
     final additionalSettingsPlusSourceConfig = {
       ...additionalSettings,
       ...(await getSourceConfigValues(additionalSettings, sp)),

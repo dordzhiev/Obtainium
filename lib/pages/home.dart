@@ -68,7 +68,7 @@ class _HomePageState extends State<HomePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final sp = context.read<SettingsProvider>();
       if (!sp.welcomeShown) {
-        await showDialog(
+        await showDialog<void>(
           context: context,
           builder: (BuildContext ctx) {
             return AlertDialog(
@@ -110,7 +110,10 @@ class _HomePageState extends State<HomePage> {
         );
       }
       if (!sp.googleVerificationWarningShown && DateTime.now().year == 2026) {
-        await showDialog(
+        if (!mounted) {
+          return;
+        }
+        await showDialog<void>(
           context: context,
           builder: (BuildContext ctx) {
             return AlertDialog(
@@ -160,11 +163,11 @@ class _HomePageState extends State<HomePage> {
     _appLinks = AppLinks();
 
     goToAddApp(String data) async {
-      switchToPage(1);
+      await switchToPage(1);
       while ((pages[1].widget.key as GlobalKey<AddAppPageState>?)
               ?.currentState ==
           null) {
-        await Future.delayed(const Duration(microseconds: 1));
+        await Future<void>.delayed(const Duration(microseconds: 1));
       }
       (pages[1].widget.key as GlobalKey<AddAppPageState>?)?.currentState
           ?.linkFn(data);
@@ -172,10 +175,10 @@ class _HomePageState extends State<HomePage> {
 
     goToExistingApp(String appId) async {
       // Go to Apps page
-      switchToPage(0);
+      await switchToPage(0);
       while ((pages[0].widget.key as GlobalKey<AppsPageState>?)?.currentState ==
           null) {
-        await Future.delayed(const Duration(microseconds: 1));
+        await Future<void>.delayed(const Duration(microseconds: 1));
       }
 
       // Navigate to the app
@@ -192,7 +195,7 @@ class _HomePageState extends State<HomePage> {
           // Ensure apps are loaded
           final AppsProvider appsProvider = context.read<AppsProvider>();
           while (appsProvider.loadingApps) {
-            await Future.delayed(const Duration(milliseconds: 10));
+            await Future<void>.delayed(const Duration(milliseconds: 10));
           }
 
           // See if we already have this app
@@ -211,7 +214,10 @@ class _HomePageState extends State<HomePage> {
           }
         } else if (action == 'app' || action == 'apps') {
           final dataStr = Uri.decodeComponent(data);
-          if (await showDialog(
+          if (!mounted) {
+            return;
+          }
+          if (await showDialog<Map<String, dynamic>?>(
                 context: context,
                 builder: (BuildContext ctx) {
                   return GeneratedFormModal(
@@ -238,14 +244,18 @@ class _HomePageState extends State<HomePage> {
                 },
               ) !=
               null) {
-            // ignore: use_build_context_synchronously
+            if (!mounted) {
+              return;
+            }
             final appsProvider = context.read<AppsProvider>();
             final result = await appsProvider.import(
               action == 'app'
                   ? '{ "apps": [$dataStr] }'
                   : '{ "apps": $dataStr }',
             );
-            // ignore: use_build_context_synchronously
+            if (!mounted) {
+              return;
+            }
             showMessage(
               tr(
                 'importedX',
@@ -263,7 +273,9 @@ class _HomePageState extends State<HomePage> {
           error: e,
           stackTrace: stackTrace,
         );
-        showError(e, context);
+        if (mounted) {
+          showError(e, context);
+        }
       }
     }
 
@@ -299,7 +311,7 @@ class _HomePageState extends State<HomePage> {
       while ((pages[0].widget.key as GlobalKey<AppsPageState>).currentState !=
           null) {
         // Avoid duplicate GlobalKey error
-        await Future.delayed(const Duration(microseconds: 1));
+        await Future<void>.delayed(const Duration(microseconds: 1));
       }
       setState(() {
         selectedIndexHistory.clear();
@@ -413,8 +425,8 @@ class _HomePageState extends State<HomePage> {
                         )
                         .toList(),
                     onDestinationSelected: (int index) async {
-                      HapticFeedback.selectionClick();
-                      switchToPage(index);
+                      unawaited(HapticFeedback.selectionClick());
+                      await switchToPage(index);
                     },
                     selectedIndex: currentIndex,
                   ),

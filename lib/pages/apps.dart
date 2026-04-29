@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:easy_localization/easy_localization.dart';
@@ -34,7 +35,7 @@ void showChangeLogDialog(
   AppSource appSource,
   String changeLog,
 ) {
-  showDialog(
+  showDialog<void>(
     context: context,
     builder: (BuildContext context) {
       return GeneratedFormModal(
@@ -179,7 +180,7 @@ class AppsPageState extends State<AppsPage> {
       });
       return appsProvider
           .checkUpdates()
-          .catchError((e) {
+          .catchError((Object e) {
             if (context.mounted) {
               showError(e is Map ? e['errors'] : e, context);
             }
@@ -459,7 +460,7 @@ class AppsPageState extends State<AppsPage> {
                     .downloadAndInstallLatestApps([
                       listedApps[appIndex].app.id,
                     ], globalNavigatorKey.currentContext)
-                    .catchError((e) {
+                    .catchError((Object e) {
                       if (context.mounted) {
                         showError(e, context);
                       }
@@ -519,7 +520,7 @@ class AppsPageState extends State<AppsPage> {
         onLongPress: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
+            MaterialPageRoute<void>(
               builder: (context) => AppPage(
                 appId: listedApps[appIndex].app.id,
                 showOppositeOfPreferredView: true,
@@ -750,7 +751,7 @@ class AppsPageState extends State<AppsPage> {
             } else {
               Navigator.push(
                 context,
-                MaterialPageRoute(
+                MaterialPageRoute<void>(
                   builder: (context) =>
                       AppPage(appId: listedApps[index].app.id),
                 ),
@@ -910,23 +911,25 @@ class AppsPageState extends State<AppsPage> {
                   if (shouldMarkTrackOnlies) {
                     toInstall.addAll(trackOnlyUpdateIdsAllOrSelected);
                   }
-                  appsProvider
-                      .downloadAndInstallLatestApps(
-                        toInstall,
-                        globalNavigatorKey.currentContext,
-                      )
-                      .catchError((e) {
-                        if (context.mounted) {
-                          showError(e, context);
-                        }
-                        return <String>[];
-                      })
-                      .then((value) {
-                        if (!context.mounted) return;
-                        if (value.isNotEmpty && shouldInstallUpdates) {
-                          showMessage(tr('appsUpdated'), context);
-                        }
-                      });
+                  unawaited(
+                    appsProvider
+                        .downloadAndInstallLatestApps(
+                          toInstall,
+                          globalNavigatorKey.currentContext,
+                        )
+                        .catchError((Object e) {
+                          if (context.mounted) {
+                            showError(e, context);
+                          }
+                          return <String>[];
+                        })
+                        .then((value) {
+                          if (!context.mounted) return;
+                          if (value.isNotEmpty && shouldInstallUpdates) {
+                            showMessage(tr('appsUpdated'), context);
+                          }
+                        }),
+                  );
                 }
               });
             };
@@ -1005,7 +1008,7 @@ class AppsPageState extends State<AppsPage> {
     }
 
     showMassMarkDialog() {
-      return showDialog(
+      return showDialog<void>(
         context: context,
         builder: (BuildContext ctx) {
           return AlertDialog(
@@ -1060,7 +1063,7 @@ class AppsPageState extends State<AppsPage> {
     pinSelectedApps() {
       final pinStatus = selectedApps.where((element) => element.pinned).isEmpty;
       appsProvider.saveApps(
-        selectedApps.map((e) {
+        selectedApps.map((App e) {
           e.pinned = pinStatus;
           return e;
         }).toList(),
@@ -1069,7 +1072,7 @@ class AppsPageState extends State<AppsPage> {
     }
 
     showMoreOptionsDialog() {
-      return showDialog(
+      return showDialog<void>(
         context: context,
         builder: (BuildContext ctx) {
           return AlertDialog(
@@ -1170,13 +1173,13 @@ class AppsPageState extends State<AppsPage> {
                             selectedApps.map((e) => e.id).toList(),
                             globalNavigatorKey.currentContext ?? context,
                           )
-                          .catchError(
-                            // ignore: invalid_return_type_for_catch_error
-                            (e) => showError(
+                          .catchError((Object e) {
+                            showError(
                               e,
                               globalNavigatorKey.currentContext ?? context,
-                            ),
-                          );
+                            );
+                            return <String>[];
+                          });
                       Navigator.of(context).pop();
                     },
                     child: Text(
@@ -1414,7 +1417,7 @@ class AppsPageState extends State<AppsPage> {
 
     Navigator.push(
       context,
-      MaterialPageRoute(
+      MaterialPageRoute<void>(
         builder: (BuildContext context) => AppPage(appId: app.app.id),
       ),
     );
