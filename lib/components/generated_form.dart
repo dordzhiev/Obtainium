@@ -131,7 +131,6 @@ class GeneratedFormSwitch extends GeneratedFormItem {
       label: label,
       belowWidgets: belowWidgets,
       defaultValue: defaultValue as bool,
-      disabled: false,
       additionalValidators: List.from(additionalValidators),
     );
   }
@@ -201,9 +200,9 @@ class GeneratedForm extends StatefulWidget {
 List<List<GeneratedFormItem>> cloneFormItems(
   List<List<GeneratedFormItem>> items,
 ) {
-  List<List<GeneratedFormItem>> clonedItems = [];
+  final List<List<GeneratedFormItem>> clonedItems = [];
   for (var row in items) {
-    List<GeneratedFormItem> clonedRow = [];
+    final List<GeneratedFormItem> clonedRow = [];
     for (var it in row) {
       clonedRow.add(it.clone());
     }
@@ -220,7 +219,7 @@ class GeneratedFormSubForm extends GeneratedFormItem {
     this.items, {
     super.label,
     super.belowWidgets,
-    super.defaultValue = const [],
+    super.defaultValue = const <Map<String, dynamic>>[],
   });
 
   @override
@@ -263,14 +262,17 @@ int generateRandomNumber(
   int seed3 = 0,
   int max = 10000,
 }) {
-  int combinedSeed = seed1.hashCode ^ seed2.hashCode ^ seed3.hashCode;
-  Random random = Random(combinedSeed);
-  int randomNumber = random.nextInt(max);
+  final int combinedSeed = seed1.hashCode ^ seed2.hashCode ^ seed3.hashCode;
+  final Random random = Random(combinedSeed);
+  final int randomNumber = random.nextInt(max);
   return randomNumber;
 }
 
 bool validateTextField(TextFormField tf) =>
-    (tf.key as GlobalKey<FormFieldState>).currentState?.isValid == true;
+    (tf.key as GlobalKey<FormFieldState<dynamic>>)
+            .currentState
+            ?.isValid ==
+        true;
 
 class _TVTextFieldFocus extends StatefulWidget {
   final Widget child;
@@ -354,7 +356,7 @@ class _GeneratedFormState extends State<GeneratedForm> {
 
   // If any value changes, call this to update the parent with value and validity
   void someValueChanged({bool isBuilding = false, bool forceInvalid = false}) {
-    Map<String, dynamic> returnValues = values;
+    final Map<String, dynamic> returnValues = values;
     var valid = true;
     for (int r = 0; r < formInputs.length; r++) {
       for (int i = 0; i < formInputs[r].length; i++) {
@@ -382,10 +384,10 @@ class _GeneratedFormState extends State<GeneratedForm> {
     // Dynamically create form inputs
     formInputs = widget.items.asMap().entries.map((row) {
       return row.value.asMap().entries.map((e) {
-        var formItem = e.value;
+        final formItem = e.value;
         if (formItem is GeneratedFormTextField) {
-          final formFieldKey = GlobalKey<FormFieldState>();
-          var ctrl = TextEditingController(text: values[formItem.key] as String?);
+          final formFieldKey = GlobalKey<FormFieldState<dynamic>>();
+          final ctrl = TextEditingController(text: values[formItem.key] as String?);
           return TypeAheadField<String>(
             controller: ctrl,
             builder: (context, controller, focusNode) {
@@ -418,7 +420,7 @@ class _GeneratedFormState extends State<GeneratedForm> {
                   for (var validator
                       in formItem.additionalValidators
                           .cast<String? Function(String?)>()) {
-                    String? result = validator(value);
+                    final String? result = validator(value);
                     if (result != null) {
                       return result;
                     }
@@ -459,7 +461,7 @@ class _GeneratedFormState extends State<GeneratedForm> {
             decoration: InputDecoration(labelText: formItem.label),
             initialValue: values[formItem.key],
             items: formItem.opts!.map((e2) {
-              var enabled = formItem.disabledOptKeys?.contains(e2.key) != true;
+              final enabled = formItem.disabledOptKeys?.contains(e2.key) != true;
               return DropdownMenuItem(
                 value: e2.key,
                 enabled: enabled,
@@ -477,10 +479,11 @@ class _GeneratedFormState extends State<GeneratedForm> {
             },
           );
         } else if (formItem is GeneratedFormSubForm) {
-          values[formItem.key] = [];
-          for (var v in ((formItem.defaultValue ?? []) as List<dynamic>)
+          values[formItem.key] = <Map<String, dynamic>>[];
+          for (var v in ((formItem.defaultValue ??
+                      const <Map<String, dynamic>>[]) as List<dynamic>)
               .cast<Map<String, dynamic>>()) {
-            var fullDefaults = getDefaultValuesFromFormItems(formItem.items);
+            final fullDefaults = getDefaultValuesFromFormItems(formItem.items);
             for (var element in v.entries) {
               fullDefaults[element.key] = element.value;
             }
@@ -508,7 +511,7 @@ class _GeneratedFormState extends State<GeneratedForm> {
     }
     for (var r = 0; r < formInputs.length; r++) {
       for (var e = 0; e < formInputs[r].length; e++) {
-        String fieldKey = widget.items[r][e].key;
+        final String fieldKey = widget.items[r][e].key;
         if (widget.items[r][e] is GeneratedFormSwitch) {
           formInputs[r][e] = Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -541,17 +544,17 @@ class _GeneratedFormState extends State<GeneratedForm> {
                 );
               },
             ).then((value) {
-              String? label = value?['label'] as String?;
+              final String? label = value?['label'] as String?;
               if (label != null) {
                 setState(() {
                   var temp =
                       values[fieldKey] as Map<String, MapEntry<int, bool>>?;
                   temp ??= {};
                   if (temp[label] == null) {
-                    var singleSelect =
+                    final singleSelect =
                         (widget.items[r][e] as GeneratedFormTagInput)
                             .singleSelect;
-                    var someSelected = temp.entries
+                    final someSelected = temp.entries
                         .where((element) => element.value.value)
                         .isNotEmpty;
                     temp[label] = MapEntry(
@@ -671,7 +674,7 @@ class _GeneratedFormState extends State<GeneratedForm> {
                           child: IconButton(
                             onPressed: () {
                               setState(() {
-                                var temp =
+                                final temp =
                                     values[fieldKey]
                                         as Map<String, MapEntry<int, bool>>;
                                 // get selected category str where bool is true
@@ -710,7 +713,7 @@ class _GeneratedFormState extends State<GeneratedForm> {
                             onPressed: () {
                               fn() {
                                 setState(() {
-                                  var temp =
+                                  final temp =
                                       values[fieldKey]
                                           as Map<String, MapEntry<int, bool>>;
                                   temp.removeWhere((key, value) => value.value);
@@ -722,7 +725,7 @@ class _GeneratedFormState extends State<GeneratedForm> {
                               if ((widget.items[r][e] as GeneratedFormTagInput)
                                       .deleteConfirmationMessage !=
                                   null) {
-                                var message =
+                                final message =
                                     (widget.items[r][e]
                                             as GeneratedFormTagInput)
                                         .deleteConfirmationMessage!;
@@ -778,12 +781,12 @@ class _GeneratedFormState extends State<GeneratedForm> {
             ],
           );
         } else if (widget.items[r][e] is GeneratedFormSubForm) {
-          List<Widget> subformColumn = [];
-          var compact =
+          final List<Widget> subformColumn = [];
+          final compact =
               (widget.items[r][e] as GeneratedFormSubForm).items.length == 1 &&
               (widget.items[r][e] as GeneratedFormSubForm).items[0].length == 1;
           for (int i = 0; i < (values[fieldKey] as List<dynamic>).length; i++) {
-            var internalFormKey = ValueKey(
+            final internalFormKey = ValueKey(
               generateRandomNumber(
                 (values[fieldKey] as List<dynamic>).length,
                 seed2: i,
@@ -837,11 +840,11 @@ class _GeneratedFormState extends State<GeneratedForm> {
                         ),
                         onPressed: ((values[fieldKey] as List<dynamic>).isNotEmpty)
                             ? () {
-                                var temp = List<dynamic>.from(
+                                final temp = List<dynamic>.from(
                                   values[fieldKey] as List<dynamic>,
                                 );
                                 temp.removeAt(i);
-                                values[fieldKey] = List.from(temp);
+                                values[fieldKey] = List<dynamic>.from(temp);
                                 forceUpdateKeyCount++;
                                 someValueChanged();
                               }
@@ -859,7 +862,7 @@ class _GeneratedFormState extends State<GeneratedForm> {
           }
           subformColumn.add(
             Padding(
-              padding: const EdgeInsets.only(bottom: 0, top: 8),
+              padding: const EdgeInsets.only(top: 8),
               child: Row(
                 children: [
                   Expanded(
@@ -899,7 +902,7 @@ class _GeneratedFormState extends State<GeneratedForm> {
           ),
         ]);
       }
-      List<Widget> rowItems = [];
+      final List<Widget> rowItems = [];
       rowInputs.value.asMap().entries.forEach((rowInput) {
         if (rowInput.key > 0) {
           rowItems.add(const SizedBox(width: 20));
@@ -926,7 +929,6 @@ class _GeneratedFormState extends State<GeneratedForm> {
         children: [
           ...rows.map(
             (row) => Row(
-              mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [...row.map((e) => e)],
             ),

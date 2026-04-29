@@ -15,13 +15,13 @@ class IzzyOnDroid extends AppSource {
 
   @override
   String sourceSpecificStandardizeURL(String url, {bool forSelection = false}) {
-    RegExp standardUrlRegExA = RegExp(
+    final RegExp standardUrlRegExA = RegExp(
       '^https?://android.${getSourceRegex(hosts)}/repo/apk/[^/]+',
       caseSensitive: false,
     );
     RegExpMatch? match = standardUrlRegExA.firstMatch(url);
     if (match == null) {
-      RegExp standardUrlRegExB = RegExp(
+      final RegExp standardUrlRegExB = RegExp(
         '^https?://apt.${getSourceRegex(hosts)}/fdroid/index/apk/[^/]+',
         caseSensitive: false,
       );
@@ -46,7 +46,7 @@ class IzzyOnDroid extends AppSource {
     String standardUrl,
     Map<String, dynamic> additionalSettings,
   ) async {
-    String? appId = await tryInferringAppId(standardUrl);
+    final String? appId = await tryInferringAppId(standardUrl);
     return fd.getAPKUrlsFromFDroidPackagesAPIResponse(
       await sourceRequest(
         'https://apt.izzysoft.de/fdroid/api/v1/packages/$appId',

@@ -12,8 +12,8 @@ class Jenkins extends AppSource {
   }
 
   String trimJobUrl(String url) {
-    RegExp standardUrlRegEx = RegExp('.*/job/[^/]+');
-    RegExpMatch? match = standardUrlRegEx.firstMatch(url);
+    final RegExp standardUrlRegEx = RegExp('.*/job/[^/]+');
+    final RegExpMatch? match = standardUrlRegEx.firstMatch(url);
     if (match == null) {
       throw InvalidURLError(name);
     }
@@ -30,22 +30,22 @@ class Jenkins extends AppSource {
     Map<String, dynamic> additionalSettings,
   ) async {
     standardUrl = trimJobUrl(standardUrl);
-    Response res = await sourceRequest(
+    final Response res = await sourceRequest(
       '$standardUrl/lastSuccessfulBuild/api/json',
       additionalSettings,
     );
     if (res.statusCode == 200) {
-      var json = jsonDecode(res.body);
-      var releaseDate = json['timestamp'] == null
+      final json = jsonDecode(res.body);
+      final releaseDate = json['timestamp'] == null
           ? null
           : DateTime.fromMillisecondsSinceEpoch(json['timestamp'] as int);
-      var version = json['number'] == null
+      final version = json['number'] == null
           ? null
           : (json['number'] as int).toString();
       if (version == null) {
         throw NoVersionError();
       }
-      var apkUrls = (json['artifacts'] as List<dynamic>)
+      final apkUrls = (json['artifacts'] as List<dynamic>)
           .map((e) {
             var path = (e['relativePath'] as String?);
             if (path != null && path.isNotEmpty) {

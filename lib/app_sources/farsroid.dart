@@ -24,7 +24,6 @@ class Farsroid extends AppSource {
         GeneratedFormSwitch(
           'releaseTitleAsVersion',
           label: tr('releaseTitleAsVersion'),
-          defaultValue: false,
         ),
       ],
     ];
@@ -32,11 +31,11 @@ class Farsroid extends AppSource {
 
   @override
   String sourceSpecificStandardizeURL(String url, {bool forSelection = false}) {
-    RegExp standardUrlRegEx = RegExp(
+    final RegExp standardUrlRegEx = RegExp(
       '^https?://([^\\.]+\\.)${getSourceRegex(hosts)}/[^/]+',
       caseSensitive: false,
     );
-    RegExpMatch? match = standardUrlRegEx.firstMatch(url);
+    final RegExpMatch? match = standardUrlRegEx.firstMatch(url);
     if (match == null) {
       throw InvalidURLError(name);
     }
@@ -48,31 +47,31 @@ class Farsroid extends AppSource {
     String standardUrl,
     Map<String, dynamic> additionalSettings,
   ) async {
-    String appName = Uri.parse(standardUrl).pathSegments.last;
+    final String appName = Uri.parse(standardUrl).pathSegments.last;
 
-    var res = await sourceRequest(standardUrl, additionalSettings);
+    final res = await sourceRequest(standardUrl, additionalSettings);
     if (res.statusCode != 200) {
       throw getObtainiumHttpError(res);
     }
-    var html = parse(res.body);
-    var dlinks = html.querySelectorAll('.download-links');
+    final html = parse(res.body);
+    final dlinks = html.querySelectorAll('.download-links');
     if (dlinks.isEmpty) {
       throw NoReleasesError();
     }
-    var postId = dlinks.first.attributes['data-post-id'] ?? '';
+    final postId = dlinks.first.attributes['data-post-id'] ?? '';
     var version = dlinks.first.attributes['data-post-version'] ?? '';
 
     if (postId.isEmpty || version.isEmpty) {
       throw NoVersionError();
     }
 
-    var res2 = await sourceRequest(
+    final res2 = await sourceRequest(
       Uri.encodeFull(
         'https://${hosts[0]}/api/download-box/?post_id=$postId&post_version=$version',
       ),
       additionalSettings,
     );
-    var html2 = jsonDecode(res2.body)?['data']?['content'] as String? ?? '';
+    final html2 = jsonDecode(res2.body)?['data']?['content'] as String? ?? '';
     if (html2.isEmpty) {
       throw NoAPKError();
     }

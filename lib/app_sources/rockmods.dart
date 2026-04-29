@@ -11,11 +11,11 @@ class RockMods extends AppSource {
 
   @override
   String sourceSpecificStandardizeURL(String url, {bool forSelection = false}) {
-    RegExp standardUrlRegEx = RegExp(
+    final RegExp standardUrlRegEx = RegExp(
       '^https?://${getSourceRegex(hosts)}/[^/]+/[^/]+',
       caseSensitive: false,
     );
-    RegExpMatch? match = standardUrlRegEx.firstMatch(url);
+    final RegExpMatch? match = standardUrlRegEx.firstMatch(url);
     if (match == null) {
       throw InvalidURLError(name);
     }
@@ -28,45 +28,45 @@ class RockMods extends AppSource {
     Map<String, dynamic> additionalSettings,
   ) async {
     try {
-      var res = await sourceRequest(standardUrl, additionalSettings);
+      final res = await sourceRequest(standardUrl, additionalSettings);
       if (res.statusCode != 200) {
         throw getObtainiumHttpError(res);
       }
-      var html = parse(res.body);
+      final html = parse(res.body);
 
-      var nameElement = html.querySelector('h1');
-      var appName = nameElement?.text ?? standardUrl.split('/').last;
-      var appInfoElements = nameElement?.nextElementSibling?.children;
-      var appVersion = ((appInfoElements?.length ?? 0) >= 1)
+      final nameElement = html.querySelector('h1');
+      final appName = nameElement?.text ?? standardUrl.split('/').last;
+      final appInfoElements = nameElement?.nextElementSibling?.children;
+      final appVersion = ((appInfoElements?.length ?? 0) >= 1)
           ? appInfoElements![0].text
           : null;
-      var appAuthor = ((appInfoElements?.length ?? 0) >= 2)
+      final appAuthor = ((appInfoElements?.length ?? 0) >= 2)
           ? appInfoElements![1].text
           : name;
-      var releaseDateString = ((appInfoElements?.length ?? 0) >= 3)
+      final releaseDateString = ((appInfoElements?.length ?? 0) >= 3)
           ? appInfoElements![2].text
           : null;
       if (appVersion == null) {
         throw NoVersionError();
       }
 
-      var slugRegex = RegExp(
+      final slugRegex = RegExp(
         '^https?://bot.${getSourceRegex(hosts)}/[^/]+/download.php\\?slug=[^/]+',
         caseSensitive: false,
       );
-      var intermediateRegex = RegExp(
+      final intermediateRegex = RegExp(
         '^https?://download.${getSourceRegex(hosts)}/[^/]+\$',
         caseSensitive: false,
       );
 
-      var slugs = html
+      final slugs = html
           .querySelectorAll('a')
           .where((e) => slugRegex.hasMatch(e.attributes['href'] ?? ''))
           .map((e) => e.attributes['href']!)
           .toList();
 
       if (slugs.isEmpty) {
-        var intermediatePages = html
+        final intermediatePages = html
             .querySelectorAll('a')
             .where(
               (e) => intermediateRegex.hasMatch(e.attributes['href'] ?? ''),
@@ -74,10 +74,10 @@ class RockMods extends AppSource {
             .toList();
 
         if (intermediatePages.isNotEmpty) {
-          var intermediateFutures = intermediatePages.map((
+          final intermediateFutures = intermediatePages.map((
             intermediatePage,
           ) async {
-            var resIntermediate = await sourceRequest(
+            final resIntermediate = await sourceRequest(
               intermediatePage.attributes['href']!,
               additionalSettings,
             );
@@ -102,8 +102,8 @@ class RockMods extends AppSource {
         throw NoReleasesError();
       }
 
-      var slugFutures = slugs.map((slugUrl) async {
-        var resSlug = await sourceRequest(slugUrl, additionalSettings);
+      final slugFutures = slugs.map((slugUrl) async {
+        final resSlug = await sourceRequest(slugUrl, additionalSettings);
         if (resSlug.statusCode != 200) {
           throw getObtainiumHttpError(resSlug);
         }
@@ -111,21 +111,21 @@ class RockMods extends AppSource {
       }).toList();
       final slugResults = await Future.wait(slugFutures);
 
-      List<MapEntry<String, String>> apkUrls = [];
+      final List<MapEntry<String, String>> apkUrls = [];
 
       for (final entry in slugResults) {
         final slugUrl = entry.key;
         final htmlSlug = entry.value;
 
-        var fnPs = htmlSlug.querySelectorAll('p').where((e) {
+        final fnPs = htmlSlug.querySelectorAll('p').where((e) {
           return e.text == 'File Name';
         });
 
-        var apkName =
+        final apkName =
             (fnPs.isNotEmpty ? fnPs.first.nextElementSibling?.text : null) ??
             ('${slugUrl.split('=').last}.apk');
 
-        var dlLink = htmlSlug
+        final dlLink = htmlSlug
             .querySelector('#download-button')
             ?.attributes['href'];
 

@@ -50,7 +50,7 @@ class _SettingsPageState extends State<SettingsPage> {
       };
 
   void initUpdateIntervalInterpolator() {
-    List<InterpolationNode> nodes = [];
+    final List<InterpolationNode> nodes = [];
     for (final (index, element) in updateIntervalNodes.indexed) {
       nodes.add(
         InterpolationNode(x: index.toDouble() + 1, y: element.toDouble()),
@@ -75,21 +75,21 @@ class _SettingsPageState extends State<SettingsPage> {
       updateInterval = valInterpolated;
       updateIntervalLabel = plural('minute', valInterpolated);
     } else if (valInterpolated < 8 * 60) {
-      int valRounded = (valInterpolated / 15).floor() * 15;
+      final int valRounded = (valInterpolated / 15).floor() * 15;
       updateInterval = valRounded;
       updateIntervalLabel = plural('hour', valRounded ~/ 60);
-      int mins = valRounded % 60;
+      final int mins = valRounded % 60;
       if (mins != 0) updateIntervalLabel += " ${plural('minute', mins)}";
     } else if (valInterpolated < 24 * 60) {
-      int valRounded = (valInterpolated / 30).floor() * 30;
+      final int valRounded = (valInterpolated / 30).floor() * 30;
       updateInterval = valRounded;
       updateIntervalLabel = plural('hour', valRounded / 60);
     } else if (valInterpolated < 7 * 24 * 60) {
-      int valRounded = (valInterpolated / (12 * 60)).floor() * 12 * 60;
+      final int valRounded = (valInterpolated / (12 * 60)).floor() * 12 * 60;
       updateInterval = valRounded;
       updateIntervalLabel = plural('day', valRounded / (24 * 60));
     } else {
-      int valRounded = (valInterpolated / (24 * 60)).floor() * 24 * 60;
+      final int valRounded = (valInterpolated / (24 * 60)).floor() * 24 * 60;
       updateInterval = valRounded;
       updateIntervalLabel = plural('day', valRounded ~/ (24 * 60));
     }
@@ -97,13 +97,13 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    SettingsProvider settingsProvider = context.watch<SettingsProvider>();
-    SourceProvider sourceProvider = SourceProvider();
+    final SettingsProvider settingsProvider = context.watch<SettingsProvider>();
+    final SourceProvider sourceProvider = SourceProvider();
     if (settingsProvider.prefs == null) settingsProvider.initializeSettings();
     initUpdateIntervalInterpolator();
     processIntervalSliderValue(settingsProvider.updateIntervalSliderVal);
 
-    var followSystemThemeExplanation = FutureBuilder(
+    final followSystemThemeExplanation = FutureBuilder(
       builder: (ctx, val) {
         return ((val.data?.version.sdkInt ?? 30) < 29)
             ? Text(
@@ -177,7 +177,7 @@ class _SettingsPageState extends State<SettingsPage> {
       );
     }
 
-    var colorPicker = ListTile(
+    final colorPicker = ListTile(
       dense: true,
       contentPadding: EdgeInsets.zero,
       title: Text(tr('selectX', args: [tr('colour').toLowerCase()])),
@@ -186,8 +186,6 @@ class _SettingsPageState extends State<SettingsPage> {
         "(${ColorTools.materialNameAndCode(settingsProvider.themeColor, colorSwatchNameMap: colorsNameMap)})",
       ),
       trailing: ColorIndicator(
-        width: 40,
-        height: 40,
         borderRadius: 20,
         color: settingsProvider.themeColor,
         onSelectFocus: false,
@@ -202,7 +200,7 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
     );
 
-    var useMaterialThemeSwitch = FutureBuilder(
+    final useMaterialThemeSwitch = FutureBuilder(
       builder: (ctx, val) {
         return ((val.data?.version.sdkInt ?? 0) >= 31)
             ? Row(
@@ -222,7 +220,7 @@ class _SettingsPageState extends State<SettingsPage> {
       future: DeviceInfoPlugin().androidInfo,
     );
 
-    var sortDropdown = DropdownButtonFormField(
+    final sortDropdown = DropdownButtonFormField(
       isExpanded: true,
       decoration: InputDecoration(labelText: tr('appSortBy')),
       initialValue: settingsProvider.sortColumn,
@@ -251,7 +249,7 @@ class _SettingsPageState extends State<SettingsPage> {
       },
     );
 
-    var orderDropdown = DropdownButtonFormField(
+    final orderDropdown = DropdownButtonFormField(
       isExpanded: true,
       decoration: InputDecoration(labelText: tr('appSortOrder')),
       initialValue: settingsProvider.sortOrder,
@@ -272,16 +270,21 @@ class _SettingsPageState extends State<SettingsPage> {
       },
     );
 
-    var localeDropdown = DropdownButtonFormField(
+    final localeDropdown = DropdownButtonFormField<Locale?>(
       decoration: InputDecoration(labelText: tr('language')),
       initialValue: settingsProvider.forcedLocale,
       items: [
-        DropdownMenuItem(value: null, child: Text(tr('followSystem'))),
+        DropdownMenuItem<Locale?>(
+          child: Text(tr('followSystem')),
+        ),
         ...supportedLocales.map(
-          (e) => DropdownMenuItem(value: e.key, child: Text(e.value)),
+          (e) => DropdownMenuItem<Locale?>(
+            value: e.key,
+            child: Text(e.value),
+          ),
         ),
       ],
-      onChanged: (value) {
+      onChanged: (Locale? value) {
         settingsProvider.forcedLocale = value;
         if (value != null) {
           context.setLocale(value);
@@ -366,7 +369,7 @@ class _SettingsPageState extends State<SettingsPage> {
           )
         : rawSlider;
 
-    var sourceSpecificFields = sourceProvider.sources.map((e) {
+    final sourceSpecificFields = sourceProvider.sources.map((e) {
       if (e.sourceConfigSettingFormItems.isNotEmpty) {
         return GeneratedForm(
           items: e.sourceConfigSettingFormItems.map((e) {
@@ -380,7 +383,7 @@ class _SettingsPageState extends State<SettingsPage> {
           onValueChanges: (values, valid, isBuilding) {
             if (valid && !isBuilding) {
               values.forEach((key, value) {
-                var formItem = e.sourceConfigSettingFormItems
+                final formItem = e.sourceConfigSettingFormItems
                     .where((i) => i.key == key)
                     .firstOrNull;
                 if (formItem is GeneratedFormSwitch) {
@@ -796,7 +799,6 @@ class _SettingsPageState extends State<SettingsPage> {
                         useMaterialThemeSwitch,
                         if (!settingsProvider.useMaterialYou) colorPicker,
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Expanded(child: sortDropdown),
@@ -1028,7 +1030,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           if (logs.isEmpty) {
                             showMessage(ObtainiumError(tr('noLogs')), context);
                           } else {
-                            showDialog(
+                            showDialog<void>(
                               context: context,
                               builder: (BuildContext ctx) {
                                 return const LogsDialog();
@@ -1065,13 +1067,13 @@ class _LogsDialogState extends State<LogsDialog> {
 
   @override
   Widget build(BuildContext context) {
-    var logsProvider = context.read<LogsProvider>();
+    final logsProvider = context.read<LogsProvider>();
     void filterLogs(int days) {
       logsProvider
           .get(after: DateTime.now().subtract(Duration(days: days)))
           .then((value) {
             setState(() {
-              String l = value.map((e) => e.toString()).join('\n\n');
+              final String l = value.map((e) => e.toString()).join('\n\n');
               logString = l.isNotEmpty ? l : tr('noLogs');
             });
           });
@@ -1105,7 +1107,7 @@ class _LogsDialogState extends State<LogsDialog> {
       actions: [
         TextButton(
           onPressed: () async {
-            var cont =
+            final cont =
                 (await showDialog<Map<String, dynamic>?>(
                   context: context,
                   builder: (BuildContext ctx) {
@@ -1172,8 +1174,8 @@ class _CategoryEditorSelectorState extends State<CategoryEditorSelector> {
 
   @override
   Widget build(BuildContext context) {
-    var settingsProvider = context.watch<SettingsProvider>();
-    var appsProvider = context.watch<AppsProvider>();
+    final settingsProvider = context.watch<SettingsProvider>();
+    final appsProvider = context.watch<AppsProvider>();
     storedValues = settingsProvider.categories.map(
       (key, value) => MapEntry(
         key,

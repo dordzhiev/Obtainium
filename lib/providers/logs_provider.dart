@@ -19,7 +19,7 @@ class Log {
   DateTime timestamp = DateTime.now();
 
   Map<String, Object?> toMap() {
-    var map = <String, Object?>{
+    final map = <String, Object?>{
       idColumn: id,
       levelColumn: level.index,
       messageColumn: message,
@@ -70,7 +70,7 @@ create table if not exists $logTable (
   }
 
   Future<Log> add(String message, {LogLevels level = LogLevels.info}) async {
-    Log l = Log(message, level);
+    final Log l = Log(message, level);
     l.id = await (await getDB()).insert(logTable, l.toMap());
     if (kDebugMode) {
       AppLogger.debug(l.toString());
@@ -79,7 +79,7 @@ create table if not exists $logTable (
   }
 
   Future<List<Log>> get({DateTime? before, DateTime? after}) async {
-    var where = getWhereDates(before: before, after: after);
+    final where = getWhereDates(before: before, after: after);
     return (await (await getDB()).query(
       logTable,
       where: where.key,
@@ -88,8 +88,8 @@ create table if not exists $logTable (
   }
 
   Future<int> clear({DateTime? before, DateTime? after}) async {
-    var where = getWhereDates(before: before, after: after);
-    var res = await (await getDB()).delete(
+    final where = getWhereDates(before: before, after: after);
+    final res = await (await getDB()).delete(
       logTable,
       where: where.key,
       whereArgs: where.value,
@@ -112,8 +112,8 @@ MapEntry<String?, List<int>?> getWhereDates({
   DateTime? before,
   DateTime? after,
 }) {
-  List<String> where = [];
-  List<int> whereArgs = [];
+  final List<String> where = [];
+  final List<int> whereArgs = [];
   if (before != null) {
     where.add('$timestampColumn < ?');
     whereArgs.add(before.millisecondsSinceEpoch);

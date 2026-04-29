@@ -42,8 +42,8 @@ class DirectAPKLink extends AppSource {
     if (!forSelection) {
       return url;
     }
-    RegExp standardUrlRegExA = RegExp('.+\\.apk\$', caseSensitive: false);
-    var match = standardUrlRegExA.firstMatch(url);
+    final RegExp standardUrlRegExA = RegExp('.+\\.apk\$', caseSensitive: false);
+    final match = standardUrlRegExA.firstMatch(url);
     if (match == null) {
       throw InvalidURLError(name);
     }
@@ -68,7 +68,7 @@ class DirectAPKLink extends AppSource {
     String standardUrl,
     Map<String, dynamic> additionalSettings,
   ) async {
-    var additionalSettingsNew = getDefaultValuesFromFormItems(
+    final additionalSettingsNew = getDefaultValuesFromFormItems(
       html.combinedAppSpecificSettingFormItems,
     );
     for (var s in additionalSettings.keys) {

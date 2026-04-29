@@ -13,11 +13,11 @@ class HuaweiAppGallery extends AppSource {
 
   @override
   String sourceSpecificStandardizeURL(String url, {bool forSelection = false}) {
-    RegExp standardUrlRegEx = RegExp(
+    final RegExp standardUrlRegEx = RegExp(
       '^https?://(www\\.)?${getSourceRegex(hosts)}(/#)?/(app|appdl)/[^/]+',
       caseSensitive: false,
     );
-    RegExpMatch? match = standardUrlRegEx.firstMatch(url);
+    final RegExpMatch? match = standardUrlRegEx.firstMatch(url);
     if (match == null) {
       throw InvalidURLError(name);
     }
@@ -31,7 +31,7 @@ class HuaweiAppGallery extends AppSource {
     String dlUrl,
     Map<String, dynamic> additionalSettings,
   ) async {
-    Response res = await sourceRequest(
+    final Response res = await sourceRequest(
       dlUrl,
       additionalSettings,
       followRedirects: false,
@@ -46,7 +46,7 @@ class HuaweiAppGallery extends AppSource {
   }
 
   String appIdFromRedirectDlUrl(String redirectDlUrl) {
-    var parts = redirectDlUrl
+    final parts = redirectDlUrl
         .split('?')[0]
         .split('/')
         .last
@@ -63,8 +63,8 @@ class HuaweiAppGallery extends AppSource {
     String standardUrl, {
     Map<String, dynamic> additionalSettings = const {},
   }) async {
-    String dlUrl = getDlUrl(standardUrl);
-    Response res = await requestAppdlRedirect(dlUrl, additionalSettings);
+    final String dlUrl = getDlUrl(standardUrl);
+    final Response res = await requestAppdlRedirect(dlUrl, additionalSettings);
     return res.headers['location'] != null
         ? appIdFromRedirectDlUrl(res.headers['location']!)
         : null;
@@ -75,16 +75,16 @@ class HuaweiAppGallery extends AppSource {
     String standardUrl,
     Map<String, dynamic> additionalSettings,
   ) async {
-    String dlUrl = getDlUrl(standardUrl);
-    Response res = await requestAppdlRedirect(dlUrl, additionalSettings);
+    final String dlUrl = getDlUrl(standardUrl);
+    final Response res = await requestAppdlRedirect(dlUrl, additionalSettings);
     if (res.headers['location'] == null) {
       throw NoReleasesError();
     }
-    String appId = appIdFromRedirectDlUrl(res.headers['location']!);
+    final String appId = appIdFromRedirectDlUrl(res.headers['location']!);
     if (appId.isEmpty) {
       throw NoReleasesError();
     }
-    var relDateStr = res.headers['location']
+    final relDateStr = res.headers['location']
         ?.split('?')[0]
         .split('.')
         .reversed
@@ -92,17 +92,17 @@ class HuaweiAppGallery extends AppSource {
     if (relDateStr == null || relDateStr.length != 10) {
       throw NoVersionError();
     }
-    var relDateStrAdj = relDateStr.split('');
-    var tempLen = relDateStrAdj.length;
+    final relDateStrAdj = relDateStr.split('');
+    final tempLen = relDateStrAdj.length;
     var i = 2;
     while (i < tempLen) {
       relDateStrAdj.insert((i + i ~/ 2 - 1), '-');
       i += 2;
     }
-    var relDate = DateFormat(
+    final relDate = DateFormat(
       'yy-MM-dd-HH-mm',
       'en_US',
-    ).parse(relDateStrAdj.join(''));
+    ).parse(relDateStrAdj.join());
     return APKDetails(
       relDateStr,
       [MapEntry('$appId.apk', dlUrl)],

@@ -72,7 +72,7 @@ class SettingsProvider with ChangeNotifier {
   }
 
   Color get themeColor {
-    int? colorCode = prefs?.getInt('themeColor');
+    final int? colorCode = prefs?.getInt('themeColor');
     return (colorCode != null) ? Color(colorCode) : obtainiumThemeColor;
   }
 
@@ -147,7 +147,7 @@ class SettingsProvider with ChangeNotifier {
   }
 
   bool checkAndFlipFirstRun() {
-    bool result = prefs?.getBool('firstRun') ?? true;
+    final bool result = prefs?.getBool('firstRun') ?? true;
     if (result) {
       prefs?.setBool('firstRun', false);
     }
@@ -256,7 +256,7 @@ class SettingsProvider with ChangeNotifier {
   }
 
   String? getSettingString(String settingId) {
-    String? str = prefs?.getString(settingId);
+    final String? str = prefs?.getString(settingId);
     return str?.isNotEmpty == true ? str : null;
   }
 
@@ -281,10 +281,10 @@ class SettingsProvider with ChangeNotifier {
 
   void setCategories(Map<String, int> cats, {AppsProvider? appsProvider}) {
     if (appsProvider != null) {
-      List<App> changedApps = appsProvider
+      final List<App> changedApps = appsProvider
           .getAppValues()
           .map((a) {
-            var n1 = a.app.categories.length;
+            final n1 = a.app.categories.length;
             a.app.categories.removeWhere((c) => !cats.keys.contains(c));
             return n1 > a.app.categories.length ? a.app : null;
           })
@@ -300,11 +300,11 @@ class SettingsProvider with ChangeNotifier {
   }
 
   Locale? get forcedLocale {
-    var flSegs = prefs?.getString('forcedLocale')?.split('-');
-    var fl = flSegs != null && flSegs.isNotEmpty
+    final flSegs = prefs?.getString('forcedLocale')?.split('-');
+    final fl = flSegs != null && flSegs.isNotEmpty
         ? Locale(flSegs[0], flSegs.length > 1 ? flSegs[1] : null)
         : null;
-    var set = supportedLocales.where((element) => element.key == fl).isNotEmpty
+    final set = supportedLocales.where((element) => element.key == fl).isNotEmpty
         ? fl
         : null;
     return set;
@@ -397,7 +397,7 @@ class SettingsProvider with ChangeNotifier {
   }
 
   DateTime get lastCompletedBGCheckTime {
-    int? temp = prefs?.getInt('lastCompletedBGCheckTime');
+    final int? temp = prefs?.getInt('lastCompletedBGCheckTime');
     return temp != null
         ? DateTime.fromMillisecondsSinceEpoch(temp)
         : DateTime.fromMillisecondsSinceEpoch(0);
@@ -427,7 +427,7 @@ class SettingsProvider with ChangeNotifier {
   }
 
   Future<Uri?> getExportDir() async {
-    var uriString = prefs?.getString('exportDir');
+    final uriString = prefs?.getString('exportDir');
     if (uriString != null) {
       Uri? uri = Uri.parse(uriString);
       if (!(await saf.canRead(uri) ?? false) ||
@@ -443,8 +443,8 @@ class SettingsProvider with ChangeNotifier {
   }
 
   Future<void> pickExportDir({bool remove = false}) async {
-    var existingSAFPerms = (await saf.persistedUriPermissions()) ?? [];
-    var currentOneWayDataSyncDir = await getExportDir();
+    final existingSAFPerms = (await saf.persistedUriPermissions()) ?? [];
+    final currentOneWayDataSyncDir = await getExportDir();
     Uri? newOneWayDataSyncDir;
     if (!remove) {
       newOneWayDataSyncDir = (await saf.openDocumentTree());
@@ -485,7 +485,7 @@ class SettingsProvider with ChangeNotifier {
       return prefs?.getInt('exportSettings') ??
           1; // 0 for no, 1 for yes but no secrets, 2 for everything
     } catch (e) {
-      var val = prefs?.getBool('exportSettings') == true ? 1 : 0;
+      final val = prefs?.getBool('exportSettings') == true ? 1 : 0;
       prefs?.setInt('exportSettings', val);
       return val;
     }

@@ -14,11 +14,11 @@ class Tencent extends AppSource {
 
   @override
   String sourceSpecificStandardizeURL(String url, {bool forSelection = false}) {
-    RegExp standardUrlRegEx = RegExp(
+    final RegExp standardUrlRegEx = RegExp(
       '^https?://${getSourceRegex(hosts)}/appdetail/[^/]+',
       caseSensitive: false,
     );
-    var match = standardUrlRegEx.firstMatch(url);
+    final match = standardUrlRegEx.firstMatch(url);
     if (match == null) {
       throw InvalidURLError(name);
     }
@@ -38,12 +38,12 @@ class Tencent extends AppSource {
     String standardUrl,
     Map<String, dynamic> additionalSettings,
   ) async {
-    String appId = (await tryInferringAppId(standardUrl))!;
-    String baseHost = Uri.parse(
+    final String appId = (await tryInferringAppId(standardUrl))!;
+    final String baseHost = Uri.parse(
       standardUrl,
     ).host.split('.').reversed.toList().sublist(0, 2).reversed.join('.');
 
-    var res = await sourceRequest(
+    final res = await sourceRequest(
       'https://a.app.$baseHost/o/simple.jsp?pkgname=$appId',
       additionalSettings,
       followRedirects: false,
@@ -66,15 +66,15 @@ class Tencent extends AppSource {
       if (json == null) {
         throw NoReleasesError();
       }
-      var version = json['versionName'] as String;
+      final version = json['versionName'] as String;
       var apkUrl = json['apkUrl64'] as String?;
       apkUrl ??= json['apkUrl'] as String?;
       if (apkUrl == null) {
         throw NoAPKError();
       }
-      var appName = json['appName'] as String;
-      var author = json['author'] as String;
-      var apkName =
+      final appName = json['appName'] as String;
+      final author = json['author'] as String;
+      final apkName =
           Uri.parse(apkUrl).queryParameters['fsname'] ??
           '${appId}_$version.apk';
 

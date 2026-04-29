@@ -9,7 +9,7 @@ import 'package:obtainium/providers/source_provider.dart';
 extension Unique<E, Id> on List<E> {
   List<E> unique([Id Function(E element)? id, bool inplace = true]) {
     final ids = <dynamic>{};
-    var list = inplace ? this : List<E>.from(this);
+    final list = inplace ? this : List<E>.from(this);
     list.retainWhere((x) => ids.add(id != null ? id(x) : x as Id));
     return list;
   }
@@ -33,7 +33,6 @@ class APKPure extends AppSource {
         GeneratedFormSwitch(
           'stayOneVersionBehind',
           label: tr('stayOneVersionBehind'),
-          defaultValue: false,
         ),
       ],
       [
@@ -48,16 +47,16 @@ class APKPure extends AppSource {
 
   @override
   String sourceSpecificStandardizeURL(String url, {bool forSelection = false}) {
-    RegExp standardUrlRegExB = RegExp(
+    final RegExp standardUrlRegExB = RegExp(
       '^https?://m.${getSourceRegex(hosts)}(/+[^/]{2})?/+[^/]+/+[^/]+',
       caseSensitive: false,
     );
     RegExpMatch? match = standardUrlRegExB.firstMatch(url);
     if (match != null) {
-      var uri = Uri.parse(url);
+      final uri = Uri.parse(url);
       url = 'https://${uri.host.substring(2)}${uri.path}';
     }
-    RegExp standardUrlRegExA = RegExp(
+    final RegExp standardUrlRegExA = RegExp(
       '^https?://(www\\.)?${getSourceRegex(hosts)}(/+[^/]{2})?/+[^/]+/+[^/]+',
       caseSensitive: false,
     );
@@ -83,12 +82,12 @@ class APKPure extends AppSource {
   ) async {
     var apkUrls = versionVariants
         .map((e) {
-          String appId = e['package_name'] as String;
-          String versionCode = e['version_code'] as String;
+          final String appId = e['package_name'] as String;
+          final String versionCode = e['version_code'] as String;
 
           List<String> architectures =
               (e['native_code'] as List<dynamic>? ?? []).cast<String>();
-          String architectureString = architectures.join(',');
+          final String architectureString = architectures.join(',');
           if (architectures.contains("universal") ||
               architectures.contains("unlimited")) {
             architectures = [];
@@ -100,8 +99,8 @@ class APKPure extends AppSource {
           }
 
           final asset = e['asset'] as Map<String, dynamic>;
-          String type = asset['type'] as String;
-          String downloadUri = asset['url'] as String;
+          final String type = asset['type'] as String;
+          final String downloadUri = asset['url'] as String;
 
           return MapEntry(
             '$appId-$versionCode-$architectureString.${type.toLowerCase()}',
@@ -117,11 +116,11 @@ class APKPure extends AppSource {
     }
 
     // get version details from first variant
-    var v = versionVariants.first;
-    String version = v['version_name'] as String;
-    String author = v['developer'] as String;
-    String appName = v['title'] as String;
-    DateTime releaseDate = DateTime.parse(v['update_date'] as String);
+    final v = versionVariants.first;
+    final String version = v['version_name'] as String;
+    final String author = v['developer'] as String;
+    final String appName = v['title'] as String;
+    final DateTime releaseDate = DateTime.parse(v['update_date'] as String);
     String? changeLog = v['whatsnew'] as String?;
     if (changeLog != null && changeLog.isEmpty) {
       changeLog = null;
@@ -162,13 +161,13 @@ class APKPure extends AppSource {
     String standardUrl,
     Map<String, dynamic> additionalSettings,
   ) async {
-    String appId = (await tryInferringAppId(standardUrl))!;
+    final String appId = (await tryInferringAppId(standardUrl))!;
 
-    List<String> supportedArchs =
+    final List<String> supportedArchs =
         (await DeviceInfoPlugin().androidInfo).supportedAbis;
 
     // request versions from API
-    var res = await sourceRequest(
+    final res = await sourceRequest(
       "https://tapi.pureapk.com/v3/get_app_his_version?package_name=$appId&hl=en",
       additionalSettings,
     );
@@ -176,18 +175,18 @@ class APKPure extends AppSource {
       throw getObtainiumHttpError(res);
     }
     final decoded = jsonDecode(res.body) as Map<String, dynamic>;
-    List<Map<String, dynamic>> apks =
+    final List<Map<String, dynamic>> apks =
         (decoded['version_list'] as List<dynamic>)
             .map((e) => Map<String, dynamic>.from(e as Map))
             .toList();
 
     // group by version
-    List<List<Map<String, dynamic>>> versions = apks
+    final List<List<Map<String, dynamic>>> versions = apks
         .fold<Map<String, List<Map<String, dynamic>>>>({}, (
           Map<String, List<Map<String, dynamic>>> val,
           Map<String, dynamic> element,
         ) {
-          String v = element['version_name'] as String;
+          final String v = element['version_name'] as String;
           if (!val.containsKey(v)) {
             val[v] = [];
           }
@@ -202,7 +201,7 @@ class APKPure extends AppSource {
     }
 
     for (var i = 0; i < versions.length; i++) {
-      var v = versions[i];
+      final v = versions[i];
       try {
         if (i == 0 && additionalSettings['stayOneVersionBehind'] == true) {
           throw NoReleasesError();

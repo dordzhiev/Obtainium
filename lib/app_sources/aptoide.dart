@@ -15,11 +15,11 @@ class Aptoide extends AppSource {
 
   @override
   String sourceSpecificStandardizeURL(String url, {bool forSelection = false}) {
-    RegExp standardUrlRegEx = RegExp(
+    final RegExp standardUrlRegEx = RegExp(
       '^https?://([^\\.]+\\.){2,}${getSourceRegex(hosts)}',
       caseSensitive: false,
     );
-    RegExpMatch? match = standardUrlRegEx.firstMatch(url);
+    final RegExpMatch? match = standardUrlRegEx.firstMatch(url);
     if (match == null) {
       throw InvalidURLError(name);
     }
@@ -42,18 +42,18 @@ class Aptoide extends AppSource {
     String standardUrl,
     Map<String, dynamic> additionalSettings,
   ) async {
-    var res = await sourceRequest(standardUrl, additionalSettings);
+    final res = await sourceRequest(standardUrl, additionalSettings);
     if (res.statusCode != 200) {
       throw getObtainiumHttpError(res);
     }
-    var idMatch = RegExp('"app":{"id":[0-9]+').firstMatch(res.body);
+    final idMatch = RegExp('"app":{"id":[0-9]+').firstMatch(res.body);
     String? id;
     if (idMatch != null) {
       id = res.body.substring(idMatch.start + 12, idMatch.end);
     } else {
       throw NoReleasesError();
     }
-    var res2 = await sourceRequest(
+    final res2 = await sourceRequest(
       'https://ws2.aptoide.com/api/7/getApp/app_id/$id',
       additionalSettings,
     );
@@ -74,15 +74,15 @@ class Aptoide extends AppSource {
     String standardUrl,
     Map<String, dynamic> additionalSettings,
   ) async {
-    var appDetails = await getAppDetailsJSON(standardUrl, additionalSettings);
-    String appName = (appDetails['name'] as String?) ?? tr('app');
-    String author =
+    final appDetails = await getAppDetailsJSON(standardUrl, additionalSettings);
+    final String appName = (appDetails['name'] as String?) ?? tr('app');
+    final String author =
         ((appDetails['developer'] as Map<String, dynamic>?)?['name'] as String?) ??
         name;
-    String? dateStr = appDetails['updated'] as String?;
+    final String? dateStr = appDetails['updated'] as String?;
     final fileDetails = appDetails['file'] as Map<String, dynamic>?;
-    String? version = fileDetails?['vername'] as String?;
-    String? apkUrl = fileDetails?['path'] as String?;
+    final String? version = fileDetails?['vername'] as String?;
+    final String? apkUrl = fileDetails?['path'] as String?;
     if (version == null) {
       throw NoVersionError();
     }

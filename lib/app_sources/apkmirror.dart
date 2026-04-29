@@ -52,11 +52,11 @@ class APKMirror extends AppSource {
 
   @override
   String sourceSpecificStandardizeURL(String url, {bool forSelection = false}) {
-    RegExp standardUrlRegEx = RegExp(
+    final RegExp standardUrlRegEx = RegExp(
       '^https?://(www\\.)?${getSourceRegex(hosts)}/apk/[^/]+/[^/]+',
       caseSensitive: false,
     );
-    RegExpMatch? match = standardUrlRegEx.firstMatch(url);
+    final RegExpMatch? match = standardUrlRegEx.firstMatch(url);
     if (match == null) {
       throw InvalidURLError(name);
     }
@@ -72,24 +72,24 @@ class APKMirror extends AppSource {
     String standardUrl,
     Map<String, dynamic> additionalSettings,
   ) async {
-    bool fallbackToOlderReleases =
+    final bool fallbackToOlderReleases =
         additionalSettings['fallbackToOlderReleases'] == true;
-    String? regexFilter =
+    final String? regexFilter =
         (additionalSettings['filterReleaseTitlesByRegEx'] as String?)
                 ?.isNotEmpty ==
             true
         ? additionalSettings['filterReleaseTitlesByRegEx'] as String?
         : null;
-    Response res = await sourceRequest(
+    final Response res = await sourceRequest(
       '$standardUrl/feed/',
       additionalSettings,
     );
     if (res.statusCode == 200) {
-      var items = parse(res.body).querySelectorAll('item');
+      final items = parse(res.body).querySelectorAll('item');
       dynamic targetRelease;
       for (int i = 0; i < items.length; i++) {
         if (!fallbackToOlderReleases && i > 0) break;
-        String? nameToFilter = items[i].querySelector('title')?.innerHtml;
+        final String? nameToFilter = items[i].querySelector('title')?.innerHtml;
         if (regexFilter != null &&
             nameToFilter != null &&
             !RegExp(regexFilter).hasMatch(nameToFilter.trim())) {
@@ -98,13 +98,13 @@ class APKMirror extends AppSource {
         targetRelease = items[i];
         break;
       }
-      String? titleString =
+      final String? titleString =
           targetRelease?.querySelector('title')?.innerHtml as String?;
       final pubDate = targetRelease?.querySelector('pubDate')?.innerHtml;
-      String? dateString = (pubDate is String)
+      final String? dateString = (pubDate is String)
           ? pubDate.split(' ').sublist(0, 5).join(' ')
           : null;
-      DateTime? releaseDate = dateString != null
+      final DateTime? releaseDate = dateString != null
           ? HttpDate.parse('$dateString GMT')
           : null;
       String? version = titleString
@@ -131,8 +131,8 @@ class APKMirror extends AppSource {
   }
 
   AppNames getAppNames(String standardUrl) {
-    String temp = standardUrl.substring(standardUrl.indexOf('://') + 3);
-    List<String> names = temp.substring(temp.indexOf('/') + 1).split('/');
+    final String temp = standardUrl.substring(standardUrl.indexOf('://') + 3);
+    final List<String> names = temp.substring(temp.indexOf('/') + 1).split('/');
     return AppNames(names[1], names[2]);
   }
 }

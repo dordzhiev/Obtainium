@@ -28,15 +28,14 @@ class _ImportExportPageState extends State<ImportExportPage> {
 
   @override
   Widget build(BuildContext context) {
-    SourceProvider sourceProvider = SourceProvider();
-    var appsProvider = context.watch<AppsProvider>();
-    var settingsProvider = context.watch<SettingsProvider>();
+    final SourceProvider sourceProvider = SourceProvider();
+    final appsProvider = context.watch<AppsProvider>();
+    final settingsProvider = context.watch<SettingsProvider>();
 
-    var outlineButtonStyle = ButtonStyle(
+    final outlineButtonStyle = ButtonStyle(
       shape: WidgetStateProperty.all(
         StadiumBorder(
           side: BorderSide(
-            width: 1,
             color: Theme.of(context).colorScheme.primary,
           ),
         ),
@@ -60,7 +59,7 @@ class _ImportExportPageState extends State<ImportExportPage> {
                   additionalValidators: [
                     (String? value) {
                       if (value != null && value.isNotEmpty) {
-                        var lines = value.trim().split('\n');
+                        final lines = value.trim().split('\n');
                         for (int i = 0; i < lines.length; i++) {
                           try {
                             sourceProvider.getSource(lines[i]);
@@ -79,7 +78,7 @@ class _ImportExportPageState extends State<ImportExportPage> {
         },
       ).then((values) {
         if (values != null) {
-          var urls = (values['appURLList'] as String).split('\n');
+          final urls = (values['appURLList'] as String).split('\n');
           setState(() {
             importInProgress = true;
           });
@@ -144,14 +143,14 @@ class _ImportExportPageState extends State<ImportExportPage> {
               importInProgress = true;
             });
             if (result != null) {
-              String data = File(result.files.single.path!).readAsStringSync();
+              final String data = File(result.files.single.path!).readAsStringSync();
               try {
                 jsonDecode(data);
               } catch (e) {
                 throw ObtainiumError(tr('invalidInput'));
               }
               appsProvider.import(data).then((value) {
-                var cats = settingsProvider.categories;
+                final cats = settingsProvider.categories;
                 appsProvider.apps.forEach((key, value) {
                   for (var c in value.app.categories) {
                     if (!cats.containsKey(c)) {
@@ -205,7 +204,7 @@ class _ImportExportPageState extends State<ImportExportPage> {
 
     runSourceSearch(AppSource source) {
       () async {
-            var values = await showDialog<Map<String, dynamic>?>(
+            final values = await showDialog<Map<String, dynamic>?>(
               context: context,
               builder: (BuildContext ctx) {
                 return GeneratedFormModal(
@@ -228,7 +227,6 @@ class _ImportExportPageState extends State<ImportExportPage> {
                         defaultValue: source.hosts.isNotEmpty
                             ? source.hosts[0]
                             : '',
-                        required: true,
                       ),
                     ],
                   ],
@@ -245,12 +243,12 @@ class _ImportExportPageState extends State<ImportExportPage> {
                   overrideSource: source.runtimeType.toString(),
                 );
               }
-              var urlsWithDescriptions = await source.search(
+              final urlsWithDescriptions = await source.search(
                 values['searchQuery'] as String,
                 querySettings: values,
               );
               if (urlsWithDescriptions.isNotEmpty) {
-                var selectedUrls =
+                final selectedUrls =
                     // ignore: use_build_context_synchronously
                     await showDialog<List<String>?>(
                       context: context,
@@ -262,7 +260,7 @@ class _ImportExportPageState extends State<ImportExportPage> {
                       },
                     );
                 if (selectedUrls != null && selectedUrls.isNotEmpty) {
-                  var errors = await appsProvider.addAppsByURL(
+                  final errors = await appsProvider.addAppsByURL(
                     selectedUrls,
                     sourceOverride: source,
                   );
@@ -307,7 +305,7 @@ class _ImportExportPageState extends State<ImportExportPage> {
 
     runMassSourceImport(MassAppUrlSource source) {
       () async {
-            var values = await showDialog<Map<String, dynamic>?>(
+            final values = await showDialog<Map<String, dynamic>?>(
               context: context,
               builder: (BuildContext ctx) {
                 return GeneratedFormModal(
@@ -322,10 +320,10 @@ class _ImportExportPageState extends State<ImportExportPage> {
               setState(() {
                 importInProgress = true;
               });
-              var urlsWithDescriptions = await source.getUrlsWithDescriptions(
+              final urlsWithDescriptions = await source.getUrlsWithDescriptions(
                 values.values.map((e) => e.toString()).toList(),
               );
-              var selectedUrls =
+              final selectedUrls =
                   // ignore: use_build_context_synchronously
                   await showDialog<List<String>?>(
                     context: context,
@@ -334,7 +332,7 @@ class _ImportExportPageState extends State<ImportExportPage> {
                     },
                   );
               if (selectedUrls != null) {
-                var errors = await appsProvider.addAppsByURL(selectedUrls);
+                final errors = await appsProvider.addAppsByURL(selectedUrls);
                 if (errors.isEmpty) {
                   // ignore: use_build_context_synchronously
                   showMessage(
@@ -369,7 +367,7 @@ class _ImportExportPageState extends State<ImportExportPage> {
           });
     }
 
-    var sourceStrings = <String, List<String>>{};
+    final sourceStrings = <String, List<String>>{};
     sourceProvider.sources.where((e) => e.canSearch).forEach((s) {
       sourceStrings[s.name] = [s.name];
     });
@@ -512,7 +510,7 @@ class _ImportExportPageState extends State<ImportExportPage> {
                                 onPressed: importInProgress
                                     ? null
                                     : () async {
-                                        var searchSourceName =
+                                        final searchSourceName =
                                             await showDialog<List<String>?>(
                                               context: context,
                                               builder: (BuildContext ctx) {
@@ -533,7 +531,7 @@ class _ImportExportPageState extends State<ImportExportPage> {
                                               },
                                             ) ??
                                             [];
-                                        var searchSource = sourceProvider
+                                        final searchSource = sourceProvider
                                             .sources
                                             .where(
                                               (e) => searchSourceName.contains(
@@ -658,7 +656,7 @@ class _ImportErrorDialogState extends State<ImportErrorDialog> {
       actions: [
         TextButton(
           onPressed: () {
-            Navigator.of(context).pop(null);
+            Navigator.of(context).pop();
           },
           child: Text(tr('ok')),
         ),
@@ -725,16 +723,16 @@ class _SelectionModalState extends State<SelectionModal> {
   @override
   Widget build(BuildContext context) {
     final isTV = context.read<SettingsProvider>().isTV;
-    Map<MapEntry<String, List<String>>, bool> filteredEntrySelections = {};
+    final Map<MapEntry<String, List<String>>, bool> filteredEntrySelections = {};
     entrySelections.forEach((key, value) {
-      var searchableText = key.value.isEmpty ? key.key : key.value[0];
+      final searchableText = key.value.isEmpty ? key.key : key.value[0];
       if (filterRegex.isEmpty || RegExp(filterRegex).hasMatch(searchableText)) {
         filteredEntrySelections.putIfAbsent(key, () => value);
       }
     });
     if (filterRegex.isNotEmpty && filteredEntrySelections.isEmpty) {
       entrySelections.forEach((key, value) {
-        var searchableText = key.value.isEmpty ? key.key : key.value[0];
+        final searchableText = key.value.isEmpty ? key.key : key.value[0];
         if (filterRegex.isEmpty ||
             RegExp(
               filterRegex,
@@ -748,7 +746,7 @@ class _SelectionModalState extends State<SelectionModal> {
       if (widget.onlyOneSelectionAllowed) {
         return SizedBox.shrink();
       }
-      var noneSelected = entrySelections.values.where((v) => v == true).isEmpty;
+      final noneSelected = entrySelections.values.where((v) => v == true).isEmpty;
       return noneSelected
           ? TextButton(
               style: const ButtonStyle(visualDensity: VisualDensity.compact),
@@ -812,7 +810,7 @@ class _SelectionModalState extends State<SelectionModal> {
               });
             }
 
-            var urlLink = InkWell(
+            final urlLink = InkWell(
               onTap: !widget.titlesAreLinks
                   ? null
                   : () {
@@ -846,7 +844,7 @@ class _SelectionModalState extends State<SelectionModal> {
               ),
             );
 
-            var descriptionText = entry.value.length <= 1
+            final descriptionText = entry.value.length <= 1
                 ? const SizedBox.shrink()
                 : Text(
                     entry.value[1].length > 128
@@ -858,11 +856,11 @@ class _SelectionModalState extends State<SelectionModal> {
                     ),
                   );
 
-            var selectedEntries = entrySelections.entries
+            final selectedEntries = entrySelections.entries
                 .where((e) => e.value)
                 .toList();
 
-            var singleSelectTile = ListTile(
+            final singleSelectTile = ListTile(
               title: InkWell(
                 onTap: widget.titlesAreLinks
                     ? null
@@ -898,7 +896,7 @@ class _SelectionModalState extends State<SelectionModal> {
               ),
             );
 
-            var multiSelectTile = Row(
+            final multiSelectTile = Row(
               children: [
                 Checkbox(
                   value: entrySelections[entry],

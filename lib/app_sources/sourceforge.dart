@@ -10,8 +10,8 @@ class SourceForge extends AppSource {
 
   @override
   String sourceSpecificStandardizeURL(String url, {bool forSelection = false}) {
-    var sourceRegex = getSourceRegex(hosts);
-    RegExp standardUrlRegExC = RegExp(
+    final sourceRegex = getSourceRegex(hosts);
+    final RegExp standardUrlRegExC = RegExp(
       '^https?://(www\\.)?$sourceRegex/p/.+',
       caseSensitive: false,
     );
@@ -20,7 +20,7 @@ class SourceForge extends AppSource {
       url =
           'https://${Uri.parse(match.group(0)!).host}/projects/${url.substring(Uri.parse(match.group(0)!).host.length + '/projects/'.length + 1)}';
     }
-    RegExp standardUrlRegExB = RegExp(
+    final RegExp standardUrlRegExB = RegExp(
       '^https?://(www\\.)?$sourceRegex/projects/[^/]+',
       caseSensitive: false,
     );
@@ -28,7 +28,7 @@ class SourceForge extends AppSource {
     if (match != null && match.group(0) == url) {
       url = '$url/files';
     }
-    RegExp standardUrlRegExA = RegExp(
+    final RegExp standardUrlRegExA = RegExp(
       '^https?://(www\\.)?$sourceRegex/projects/[^/]+/files(/.+)?',
       caseSensitive: false,
     );
@@ -49,13 +49,13 @@ class SourceForge extends AppSource {
       standardUrl = '$standardUrl/files';
       standardUri = Uri.parse(standardUrl);
     }
-    Response res = await sourceRequest(
+    final Response res = await sourceRequest(
       '${standardUri.origin}/${standardUri.pathSegments.sublist(0, 2).join('/')}/rss?path=/',
       additionalSettings,
     );
     if (res.statusCode == 200) {
-      var parsedHtml = parse(res.body);
-      var allDownloadLinks = parsedHtml
+      final parsedHtml = parse(res.body);
+      final allDownloadLinks = parsedHtml
           .querySelectorAll('guid')
           .map((e) => e.innerHtml)
           .where((element) => element.startsWith(standardUrl))
@@ -78,7 +78,7 @@ class SourceForge extends AppSource {
           var version = segments.isNotEmpty ? segments.join('/') : null;
           if (version != null) {
             try {
-              var extractedVersion = extractVersion(
+              final extractedVersion = extractVersion(
                 additionalSettings['versionExtractionRegEx'] as String?,
                 additionalSettings['matchGroupToUse'] as String?,
                 version,
@@ -100,23 +100,23 @@ class SourceForge extends AppSource {
         }
       }
 
-      var apkUrlListAllReleases = allDownloadLinks
+      final apkUrlListAllReleases = allDownloadLinks
           .where((element) => element.toLowerCase().endsWith('.apk/download'))
           .where((element) => getVersion(element) != null)
           .toList();
       if (apkUrlListAllReleases.isEmpty) {
         throw NoReleasesError();
       }
-      String? version = getVersion(apkUrlListAllReleases[0]);
+      final String? version = getVersion(apkUrlListAllReleases[0]);
       if (version == null) {
         throw NoVersionError();
       }
 
-      var apkUrlList =
+      final apkUrlList =
           apkUrlListAllReleases // This can be used skipped for fallback support later
               .where((element) => getVersion(element) == version)
               .toList();
-      var segments = standardUrl.split('/');
+      final segments = standardUrl.split('/');
       return APKDetails(
         version,
         getApkUrlsFromUrls(apkUrlList),

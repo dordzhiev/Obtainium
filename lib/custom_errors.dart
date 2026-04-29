@@ -91,7 +91,7 @@ class MultiAppMultiError extends ObtainiumError {
       error = error.message;
     }
     rawErrors[appId] = error;
-    var string = error.toString();
+    final string = error.toString();
     var tempIds = idsByErrorString.remove(string);
     tempIds ??= [];
     tempIds.add(appId);
@@ -149,7 +149,7 @@ void showMessage(dynamic e, BuildContext context, {bool isError = false}) {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(null);
+                Navigator.of(context).pop();
               },
               child: Text(tr('ok')),
             ),
@@ -165,7 +165,7 @@ void showError(dynamic e, BuildContext context) {
 }
 
 String list2FriendlyString(List<String> list) {
-  var isUsingEnglish = isEnglish();
+  final isUsingEnglish = isEnglish();
   return list.length == 2
       ? '${list[0]} ${tr('and')} ${list[1]}'
       : list
@@ -180,5 +180,5 @@ String list2FriendlyString(List<String> list) {
                       ? '${isUsingEnglish ? ',' : ''} and '
                       : ', '),
             )
-            .join('');
+            .join();
 }

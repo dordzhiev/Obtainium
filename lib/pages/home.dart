@@ -66,7 +66,7 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     initDeepLinks();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      var sp = context.read<SettingsProvider>();
+      final sp = context.read<SettingsProvider>();
       if (!sp.welcomeShown) {
         await showDialog(
           context: context,
@@ -100,7 +100,7 @@ class _HomePageState extends State<HomePage> {
                   autofocus: sp.isTV,
                   onPressed: () {
                     sp.welcomeShown = true;
-                    Navigator.of(context).pop(null);
+                    Navigator.of(context).pop();
                   },
                   child: Text(tr('ok')),
                 ),
@@ -144,7 +144,7 @@ class _HomePageState extends State<HomePage> {
                   autofocus: sp.isTV,
                   onPressed: () {
                     sp.googleVerificationWarningShown = true;
-                    Navigator.of(context).pop(null);
+                    Navigator.of(context).pop();
                   },
                   child: Text(tr('ok')),
                 ),
@@ -185,22 +185,22 @@ class _HomePageState extends State<HomePage> {
 
     interpretLink(Uri uri) async {
       isLinkActivity = true;
-      var action = uri.host;
-      var data = uri.path.length > 1 ? uri.path.substring(1) : "";
+      final action = uri.host;
+      final data = uri.path.length > 1 ? uri.path.substring(1) : "";
       try {
         if (action == 'add') {
           // Ensure apps are loaded
-          AppsProvider appsProvider = context.read<AppsProvider>();
+          final AppsProvider appsProvider = context.read<AppsProvider>();
           while (appsProvider.loadingApps) {
             await Future.delayed(const Duration(milliseconds: 10));
           }
 
           // See if we already have this app
-          String standardizedUrl = SourceProvider()
+          final String standardizedUrl = SourceProvider()
               .getSource(data)
               .standardizeUrl(data);
 
-          AppInMemory? existingApp = appsProvider.apps.values
+          final AppInMemory? existingApp = appsProvider.apps.values
               .where((AppInMemory a) => a.app.url == standardizedUrl)
               .firstOrNull;
 
@@ -210,7 +210,7 @@ class _HomePageState extends State<HomePage> {
             await goToAddApp(data);
           }
         } else if (action == 'app' || action == 'apps') {
-          var dataStr = Uri.decodeComponent(data);
+          final dataStr = Uri.decodeComponent(data);
           if (await showDialog(
                 context: context,
                 builder: (BuildContext ctx) {
@@ -239,8 +239,8 @@ class _HomePageState extends State<HomePage> {
               ) !=
               null) {
             // ignore: use_build_context_synchronously
-            var appsProvider = context.read<AppsProvider>();
-            var result = await appsProvider.import(
+            final appsProvider = context.read<AppsProvider>();
+            final result = await appsProvider.import(
               action == 'app'
                   ? '{ "apps": [$dataStr] }'
                   : '{ "apps": $dataStr }',
@@ -285,7 +285,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void setIsReversing(int targetIndex) {
-    bool reversing =
+    final bool reversing =
         selectedIndexHistory.isNotEmpty &&
         selectedIndexHistory.last > targetIndex;
     setState(() {
@@ -308,7 +308,7 @@ class _HomePageState extends State<HomePage> {
         (selectedIndexHistory.isNotEmpty &&
             selectedIndexHistory.last != index)) {
       setState(() {
-        int existingInd = selectedIndexHistory.indexOf(index);
+        final int existingInd = selectedIndexHistory.indexOf(index);
         if (existingInd >= 0) {
           selectedIndexHistory.removeAt(existingInd);
         }
@@ -319,8 +319,8 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    AppsProvider appsProvider = context.watch<AppsProvider>();
-    SettingsProvider settingsProvider = context.watch<SettingsProvider>();
+    final AppsProvider appsProvider = context.watch<AppsProvider>();
+    final SettingsProvider settingsProvider = context.watch<SettingsProvider>();
 
     if (!prevIsLoading &&
         prevAppCount >= 0 &&
@@ -442,7 +442,7 @@ class _HomePageState extends State<HomePage> {
           });
           return;
         }
-        bool shouldPop = !(pages[0].widget.key as GlobalKey<AppsPageState>)
+        final bool shouldPop = !(pages[0].widget.key as GlobalKey<AppsPageState>)
             .currentState!
             .clearSelected();
         if (shouldPop && mounted) {

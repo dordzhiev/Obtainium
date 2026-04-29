@@ -7,14 +7,14 @@ class NativeFeatures {
   static bool _systemFontLoaded = false;
 
   static Future<ByteData> _readFileBytes(String path) async {
-    var bytes = await File(path).readAsBytes();
+    final bytes = await File(path).readAsBytes();
     return ByteData.view(bytes.buffer);
   }
 
   static Future loadSystemFont() async {
     if (_systemFontLoaded) return;
-    var fontLoader = FontLoader('SystemFont');
-    var fontFilePath = await AndroidSystemFont().getFilePath();
+    final fontLoader = FontLoader('SystemFont');
+    final fontFilePath = await AndroidSystemFont().getFilePath();
     fontLoader.addFont(_readFileBytes(fontFilePath!));
     fontLoader.load();
     _systemFontLoaded = true;

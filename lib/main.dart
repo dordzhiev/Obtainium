@@ -64,9 +64,9 @@ final globalNavigatorKey = GlobalKey<NavigatorState>();
 Future<void> loadTranslations() async {
   // See easy_localization/issues/210
   await EasyLocalizationController.initEasyLocation();
-  var s = SettingsProvider();
+  final s = SettingsProvider();
   await s.initializeSettings();
-  var forceLocale = s.forcedLocale;
+  final forceLocale = s.forcedLocale;
   final controller = EasyLocalizationController(
     saveLocale: true,
     forceLocale: forceLocale,
@@ -90,8 +90,8 @@ Future<void> loadTranslations() async {
 
 @pragma('vm:entry-point')
 void backgroundFetchHeadlessTask(HeadlessEvent task) async {
-  String taskId = task.taskId;
-  bool isTimeout = task.timeout;
+  final String taskId = task.taskId;
+  final bool isTimeout = task.timeout;
   if (isTimeout) {
     AppLogger.warn('BG update task timed out.');
     BackgroundFetch.finish(taskId);
@@ -132,7 +132,7 @@ class MyTaskHandler extends TaskHandler {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
-    ByteData data = await PlatformAssetBundle().load(
+    final ByteData data = await PlatformAssetBundle().load(
       'assets/ca/lets-encrypt-r3.pem',
     );
     SecurityContext.defaultContext.setTrustedCertificatesBytes(
@@ -167,7 +167,6 @@ void main() async {
         supportedLocales: supportedLocales.map((e) => e.key).toList(),
         path: localeDir,
         fallbackLocale: fallbackLocale,
-        useOnlyLangCode: false,
         child: const Obtainium(),
       ),
     ),
@@ -217,13 +216,11 @@ class _ObtainiumState extends State<Obtainium> {
         ),
         iosNotificationOptions: const IOSNotificationOptions(
           showNotification: false,
-          playSound: false,
         ),
         foregroundTaskOptions: ForegroundTaskOptions(
           eventAction: ForegroundTaskEventAction.repeat(900000),
           autoRunOnBoot: true,
           autoRunOnMyPackageReplaced: true,
-          allowWakeLock: true,
           allowWifiLock: true,
         ),
       );
@@ -295,10 +292,10 @@ class _ObtainiumState extends State<Obtainium> {
 
   @override
   Widget build(BuildContext context) {
-    SettingsProvider settingsProvider = context.watch<SettingsProvider>();
-    AppsProvider appsProvider = context.read<AppsProvider>();
-    LogsProvider logs = context.read<LogsProvider>();
-    NotificationsProvider notifs = context.read<NotificationsProvider>();
+    final SettingsProvider settingsProvider = context.watch<SettingsProvider>();
+    final AppsProvider appsProvider = context.read<AppsProvider>();
+    final LogsProvider logs = context.read<LogsProvider>();
+    final NotificationsProvider notifs = context.read<NotificationsProvider>();
     if (settingsProvider.updateInterval == 0) {
       stopForegroundService();
       BackgroundFetch.stop();
@@ -314,7 +311,7 @@ class _ObtainiumState extends State<Obtainium> {
     if (settingsProvider.prefs == null) {
       settingsProvider.initializeSettings();
     } else {
-      bool isFirstRun = settingsProvider.checkAndFlipFirstRun();
+      final bool isFirstRun = settingsProvider.checkAndFlipFirstRun();
       if (isFirstRun) {
         logs.add('This is the first ever run of Obtainium.');
         // If this is the first run, add Obtainium to the Apps list

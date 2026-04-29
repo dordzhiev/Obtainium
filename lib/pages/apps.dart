@@ -102,7 +102,7 @@ void showChangeLogDialog(
 }
 
 Null Function()? getChangeLogFn(BuildContext context, App app) {
-  AppSource appSource = SourceProvider().getSource(
+  final AppSource appSource = SourceProvider().getSource(
     app.url,
     overrideSource: app.overrideSource,
   );
@@ -168,8 +168,8 @@ class AppsPageState extends State<AppsPage> {
 
   @override
   Widget build(BuildContext context) {
-    var appsProvider = context.watch<AppsProvider>();
-    var settingsProvider = context.watch<SettingsProvider>();
+    final appsProvider = context.watch<AppsProvider>();
+    final settingsProvider = context.watch<SettingsProvider>();
     var listedApps = appsProvider.getAppValues().toList();
 
     refresh() {
@@ -222,11 +222,11 @@ class AppsPageState extends State<AppsPage> {
         return false;
       }
       if (filter.nameFilter.isNotEmpty || filter.authorFilter.isNotEmpty) {
-        List<String> nameTokens = filter.nameFilter
+        final List<String> nameTokens = filter.nameFilter
             .split(' ')
             .where((element) => element.trim().isNotEmpty)
             .toList();
-        List<String> authorTokens = filter.authorFilter
+        final List<String> authorTokens = filter.authorFilter
             .split(' ')
             .where((element) => element.trim().isNotEmpty)
             .toList();
@@ -306,7 +306,7 @@ class AppsPageState extends State<AppsPage> {
       listedApps = listedApps.reversed.toList();
     }
 
-    var existingUpdates = appsProvider.findExistingUpdates(installedOnly: true);
+    final existingUpdates = appsProvider.findExistingUpdates(installedOnly: true);
 
     var existingUpdateIdsAllOrSelected = existingUpdates
         .where(
@@ -324,7 +324,7 @@ class AppsPageState extends State<AppsPage> {
         )
         .toList();
 
-    List<String> trackOnlyUpdateIdsAllOrSelected = [];
+    final List<String> trackOnlyUpdateIdsAllOrSelected = [];
     existingUpdateIdsAllOrSelected = existingUpdateIdsAllOrSelected.where((id) {
       if (appsProvider.apps[id]!.app.additionalSettings['trackOnly'] == true) {
         trackOnlyUpdateIdsAllOrSelected.add(id);
@@ -341,7 +341,7 @@ class AppsPageState extends State<AppsPage> {
     }).toList();
 
     if (settingsProvider.pinUpdates) {
-      var temp = <AppInMemory>[];
+      final temp = <AppInMemory>[];
       listedApps = listedApps.where((sa) {
         if (existingUpdates.contains(sa.app.id)) {
           temp.add(sa);
@@ -353,7 +353,7 @@ class AppsPageState extends State<AppsPage> {
     }
 
     if (settingsProvider.buryNonInstalled) {
-      var temp = <AppInMemory>[];
+      final temp = <AppInMemory>[];
       listedApps = listedApps.where((sa) {
         if (sa.app.installedVersion == null) {
           temp.add(sa);
@@ -364,9 +364,9 @@ class AppsPageState extends State<AppsPage> {
       listedApps = [...listedApps, ...temp];
     }
 
-    var tempRenamed = <AppInMemory>[];
-    var tempPinned = <AppInMemory>[];
-    var tempNotPinned = <AppInMemory>[];
+    final tempRenamed = <AppInMemory>[];
+    final tempPinned = <AppInMemory>[];
+    final tempNotPinned = <AppInMemory>[];
     for (var a in listedApps) {
       if (a.app.hasPendingRepoRename) {
         tempRenamed.add(a);
@@ -379,7 +379,7 @@ class AppsPageState extends State<AppsPage> {
     listedApps = [...tempRenamed, ...tempPinned, ...tempNotPinned];
 
     List<String?> getListedCategories() {
-      var temp = listedApps.map(
+      final temp = listedApps.map(
         (e) => e.app.categories.isNotEmpty ? e.app.categories : [null],
       );
       return temp.isNotEmpty
@@ -391,7 +391,7 @@ class AppsPageState extends State<AppsPage> {
           : [];
     }
 
-    var listedCategories = getListedCategories();
+    final listedCategories = getListedCategories();
     listedCategories.sort((a, b) {
       return a != null && b != null
           ? a.toLowerCase().compareTo(b.toLowerCase())
@@ -400,7 +400,7 @@ class AppsPageState extends State<AppsPage> {
           : -1;
     });
 
-    Set<App> selectedApps = listedApps
+    final Set<App> selectedApps = listedApps
         .map((e) => e.app)
         .where((a) => selectedAppIds.contains(a.id))
         .toSet();
@@ -582,12 +582,12 @@ class AppsPageState extends State<AppsPage> {
     }
 
     getSingleAppHorizTile(int index) {
-      var showChangesFn = getChangeLogFn(context, listedApps[index].app);
-      var hasUpdate =
+      final showChangesFn = getChangeLogFn(context, listedApps[index].app);
+      final hasUpdate =
           listedApps[index].app.installedVersion != null &&
           listedApps[index].app.installedVersion !=
               listedApps[index].app.latestVersion;
-      Widget trailingRow = Row(
+      final Widget trailingRow = Row(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -657,10 +657,10 @@ class AppsPageState extends State<AppsPage> {
         ],
       );
 
-      var transparent = Theme.of(
+      final transparent = Theme.of(
         context,
       ).colorScheme.surface.withAlpha(0).toARGB32();
-      List<double> stops = [
+      final List<double> stops = [
         ...listedApps[index].app.categories.asMap().entries.map(
           (e) =>
               ((e.key / (listedApps[index].app.categories.length - 1)) -
@@ -675,7 +675,6 @@ class AppsPageState extends State<AppsPage> {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             stops: stops,
-            begin: const Alignment(-1, 0),
             end: const Alignment(-0.97, 0),
             colors: [
               ...listedApps[index].app.categories.map(
@@ -763,7 +762,7 @@ class AppsPageState extends State<AppsPage> {
     }
 
     getCategoryCollapsibleTile(int index) {
-      var tiles = listedApps
+      final tiles = listedApps
           .asMap()
           .entries
           .where(
@@ -826,7 +825,7 @@ class AppsPageState extends State<AppsPage> {
           ? null
           : () {
               HapticFeedback.heavyImpact();
-              List<GeneratedFormItem> formItems = [];
+              final List<GeneratedFormItem> formItems = [];
               if (existingUpdateIdsAllOrSelected.isNotEmpty) {
                 formItems.add(
                   GeneratedFormSwitch(
@@ -880,7 +879,7 @@ class AppsPageState extends State<AppsPage> {
               showDialog<Map<String, dynamic>?>(
                 context: context,
                 builder: (BuildContext ctx) {
-                  var totalApps =
+                  final totalApps =
                       existingUpdateIdsAllOrSelected.length +
                       newInstallIdsAllOrSelected.length +
                       trackOnlyUpdateIdsAllOrSelected.length;
@@ -898,10 +897,10 @@ class AppsPageState extends State<AppsPage> {
                   if (values.isEmpty) {
                     values = getDefaultValuesFromFormItems([formItems]);
                   }
-                  bool shouldInstallUpdates = values['updates'] == true;
-                  bool shouldInstallNew = values['installs'] == true;
-                  bool shouldMarkTrackOnlies = values['trackonlies'] == true;
-                  List<String> toInstall = [];
+                  final bool shouldInstallUpdates = values['updates'] == true;
+                  final bool shouldInstallNew = values['installs'] == true;
+                  final bool shouldMarkTrackOnlies = values['trackonlies'] == true;
+                  final List<String> toInstall = [];
                   if (shouldInstallUpdates) {
                     toInstall.addAll(existingUpdateIdsAllOrSelected);
                   }
@@ -939,7 +938,7 @@ class AppsPageState extends State<AppsPage> {
           Set<String>? preselected;
           var showPrompt = false;
           for (var element in selectedApps) {
-            var currentCats = element.categories.toSet();
+            final currentCats = element.categories.toSet();
             if (preselected == null) {
               preselected = currentCats;
             } else {
@@ -1059,7 +1058,7 @@ class AppsPageState extends State<AppsPage> {
     }
 
     pinSelectedApps() {
-      var pinStatus = selectedApps.where((element) => element.pinned).isEmpty;
+      final pinStatus = selectedApps.where((element) => element.pinned).isEmpty;
       appsProvider.saveApps(
         selectedApps.map((e) {
           e.pinned = pinStatus;
@@ -1137,16 +1136,16 @@ class AppsPageState extends State<AppsPage> {
                     onPressed: selectedAppIds.isEmpty
                         ? null
                         : () {
-                            var encoder = const JsonEncoder.withIndent("    ");
-                            var exportJSON = encoder.convert(
+                            final encoder = const JsonEncoder.withIndent("    ");
+                            final exportJSON = encoder.convert(
                               appsProvider.generateExportJSON(
                                 appIds: selectedApps.map((e) => e.id).toList(),
                                 overrideExportSettings: 0,
                               ),
                             );
-                            String fn =
+                            final String fn =
                                 '${tr('obtainiumExportHyphenatedLowercase')}-${DateTime.now().toIso8601String().replaceAll(':', '-')}-count-${selectedApps.length}';
-                            XFile f = XFile.fromData(
+                            final XFile f = XFile.fromData(
                               Uint8List.fromList(utf8.encode(exportJSON)),
                               mimeType: 'application/json',
                               name: fn,
@@ -1245,10 +1244,10 @@ class AppsPageState extends State<AppsPage> {
     }
 
     showFilterDialog() async {
-      var values = await showDialog<Map<String, dynamic>?>(
+      final values = await showDialog<Map<String, dynamic>?>(
         context: context,
         builder: (BuildContext ctx) {
-          var vals = filter.toFormValuesMap();
+          final vals = filter.toFormValuesMap();
           return GeneratedFormModal(
             initValid: true,
             title: tr('filterApps'),
@@ -1323,7 +1322,7 @@ class AppsPageState extends State<AppsPage> {
     }
 
     getFilterButtonsRow() {
-      var isFilterOff = filter.isIdenticalTo(neutralFilter, settingsProvider);
+      final isFilterOff = filter.isIdenticalTo(neutralFilter, settingsProvider);
       return Row(
         children: [
           getSelectAllButton(),
@@ -1404,9 +1403,9 @@ class AppsPageState extends State<AppsPage> {
   }
 
   void openAppById(String appId) {
-    AppsProvider appsProvider = context.read<AppsProvider>();
+    final AppsProvider appsProvider = context.read<AppsProvider>();
 
-    AppInMemory? app = appsProvider.apps[appId];
+    final AppInMemory? app = appsProvider.apps[appId];
 
     // Should exist, since we just looked it up, but just in case...
     if (app == null) {

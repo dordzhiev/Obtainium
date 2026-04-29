@@ -20,14 +20,12 @@ class FDroidRepo extends AppSource {
           'appIdOrName',
           label: tr('appIdOrName'),
           hint: tr('reposHaveMultipleApps'),
-          required: true,
         ),
       ],
       [
         GeneratedFormSwitch(
           'pickHighestVersionCode',
           label: tr('pickHighestVersionCode'),
-          defaultValue: false,
         ),
       ],
       [
@@ -41,8 +39,8 @@ class FDroidRepo extends AppSource {
   }
 
   String removeQueryParamsFromUrl(String url, {List<String> keep = const []}) {
-    var uri = Uri.parse(url);
-    Map<String, dynamic> resultParams = {};
+    final uri = Uri.parse(url);
+    final Map<String, dynamic> resultParams = {};
     uri.queryParameters.forEach((key, value) {
       if (keep.contains(key)) {
         resultParams[key] = value;
@@ -58,7 +56,7 @@ class FDroidRepo extends AppSource {
   @override
   String sourceSpecificStandardizeURL(String url, {bool forSelection = false}) {
     var standardUri = Uri.parse(url);
-    var pathSegments = standardUri.pathSegments;
+    final pathSegments = standardUri.pathSegments;
     if (pathSegments.isNotEmpty && pathSegments.last == 'index.xml') {
       pathSegments.removeLast();
       standardUri = standardUri.replace(path: pathSegments.join('/'));
@@ -76,14 +74,14 @@ class FDroidRepo extends AppSource {
       throw NoReleasesError();
     }
     url = removeQueryParamsFromUrl(standardizeUrl(url));
-    var res = await sourceRequestWithURLVariants(url, {});
+    final res = await sourceRequestWithURLVariants(url, {});
     if (res.statusCode == 200) {
-      var body = parse(res.body);
-      Map<String, List<String>> results = {};
+      final body = parse(res.body);
+      final Map<String, List<String>> results = {};
       body.querySelectorAll('application').toList().forEach((app) {
-        String appId = app.attributes['id']!;
-        String appName = app.querySelector('name')?.innerHtml ?? appId;
-        String appDesc = app.querySelector('desc')?.innerHtml ?? '';
+        final String appId = app.attributes['id']!;
+        final String appName = app.querySelector('name')?.innerHtml ?? appId;
+        final String appDesc = app.querySelector('desc')?.innerHtml ?? '';
         if (query.isEmpty ||
             appId.contains(query) ||
             appName.contains(query) ||
@@ -105,7 +103,7 @@ class FDroidRepo extends AppSource {
           row = row.map((item) {
             if (item.key == 'appIdOrName') {
               try {
-                var appId = Uri.parse(inputUrl).queryParameters['appId'];
+                final appId = Uri.parse(inputUrl).queryParameters['appId'];
                 if (appId != null && item is GeneratedFormTextField) {
                   item.required = false;
                 }
@@ -125,7 +123,7 @@ class FDroidRepo extends AppSource {
 
   @override
   App endOfGetAppChanges(App app) {
-    var uri = Uri.parse(app.url);
+    final uri = Uri.parse(app.url);
     String? appId;
     if (!isTempId(app)) {
       appId = app.id;
@@ -156,7 +154,7 @@ class FDroidRepo extends AppSource {
       additionalSettings,
     );
     if (res.statusCode != 200) {
-      var base = url.endsWith('/index.xml')
+      final base = url.endsWith('/index.xml')
           ? url.split('/').reversed.toList().sublist(1).reversed.join('/')
           : url;
       res = await sourceRequest('$base/repo/index.xml', additionalSettings);
@@ -176,25 +174,25 @@ class FDroidRepo extends AppSource {
     Map<String, dynamic> additionalSettings,
   ) async {
     String? appIdOrName = additionalSettings['appIdOrName'] as String?;
-    var standardUri = Uri.parse(standardUrl);
+    final standardUri = Uri.parse(standardUrl);
     if (standardUri.queryParameters['appId'] != null) {
       appIdOrName = standardUri.queryParameters['appId'];
     }
     standardUrl = removeQueryParamsFromUrl(standardUrl);
-    bool pickHighestVersionCode =
+    final bool pickHighestVersionCode =
         additionalSettings['pickHighestVersionCode'] == true;
-    bool trySelectingSuggestedVersionCode =
+    final bool trySelectingSuggestedVersionCode =
         additionalSettings['trySelectingSuggestedVersionCode'] == true;
     if (appIdOrName == null) {
       throw NoReleasesError();
     }
     additionalSettings['appIdOrName'] = appIdOrName;
-    var res = await sourceRequestWithURLVariants(
+    final res = await sourceRequestWithURLVariants(
       standardUrl,
       additionalSettings,
     );
     if (res.statusCode == 200) {
-      var body = parse(res.body);
+      final body = parse(res.body);
       var foundApps = body.querySelectorAll('application').where((element) {
         return element.attributes['id'] == appIdOrName;
       }).toList();
@@ -218,20 +216,20 @@ class FDroidRepo extends AppSource {
         throw ObtainiumError(tr('appWithIdOrNameNotFound'));
       }
       var authorName = body.querySelector('repo')?.attributes['name'] ?? name;
-      String appId = foundApps[0].attributes['id']!;
+      final String appId = foundApps[0].attributes['id']!;
       foundApps[0].querySelector('name')?.innerHtml ?? appId;
-      var appName = foundApps[0].querySelector('name')?.innerHtml ?? appId;
-      var releases = foundApps[0].querySelectorAll('package');
+      final appName = foundApps[0].querySelector('name')?.innerHtml ?? appId;
+      final releases = foundApps[0].querySelectorAll('package');
       if (releases.isEmpty) {
         throw NoReleasesError();
       }
-      String? changeLog = foundApps[0].querySelector('changelog')?.innerHtml;
-      String? latestVersion = releases[0].querySelector('version')?.innerHtml;
+      final String? changeLog = foundApps[0].querySelector('changelog')?.innerHtml;
+      final String? latestVersion = releases[0].querySelector('version')?.innerHtml;
       if (latestVersion == null) {
         throw NoVersionError();
       }
-      String? marketvercodeStr = foundApps[0].querySelector('marketvercode')?.innerHtml;
-      int? marketvercode = int.tryParse(marketvercodeStr ?? '');
+      final String? marketvercodeStr = foundApps[0].querySelector('marketvercode')?.innerHtml;
+      final int? marketvercode = int.tryParse(marketvercodeStr ?? '');
       List<dynamic> selectedReleases = [];
       if (trySelectingSuggestedVersionCode && marketvercode != null) {
         selectedReleases = releases.where((e) =>
@@ -239,7 +237,7 @@ class FDroidRepo extends AppSource {
           e.querySelector('apkname') != null
         ).toList();
       }
-      String? appAuthorName = foundApps[0].querySelector('author')?.innerHtml;
+      final String? appAuthorName = foundApps[0].querySelector('author')?.innerHtml;
       if (appAuthorName != null) {
         authorName = appAuthorName;
       }
@@ -259,17 +257,17 @@ class FDroidRepo extends AppSource {
           selectedReleases = [selectedReleases[0]];
         }
       }
-      String? selectedVersion =
+      final String? selectedVersion =
           (selectedReleases[0] as dynamic).querySelector('version')?.innerHtml
               as String?;
       if (selectedVersion == null) {
         throw NoVersionError();
       }
-      String? added =
+      final String? added =
           (selectedReleases[0] as dynamic).querySelector('added')?.innerHtml
               as String?;
-      DateTime? releaseDate = added != null ? DateTime.parse(added) : null;
-      List<String> apkUrls = selectedReleases
+      final DateTime? releaseDate = added != null ? DateTime.parse(added) : null;
+      final List<String> apkUrls = selectedReleases
           .map(
             (e) =>
                 '${res.request!.url.toString().split('/').reversed.toList().sublist(1).reversed.join('/')}/${e.querySelector('apkname')!.innerHtml}',

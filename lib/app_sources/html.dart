@@ -26,25 +26,25 @@ String ensureAbsoluteUrl(String ambiguousUrl, Uri referenceAbsoluteUrl) {
 }
 
 int compareAlphaNumeric(String a, String b) {
-  List<String> aParts = _splitAlphaNumeric(a);
-  List<String> bParts = _splitAlphaNumeric(b);
+  final List<String> aParts = _splitAlphaNumeric(a);
+  final List<String> bParts = _splitAlphaNumeric(b);
 
   for (int i = 0; i < aParts.length && i < bParts.length; i++) {
-    String aPart = aParts[i];
-    String bPart = bParts[i];
+    final String aPart = aParts[i];
+    final String bPart = bParts[i];
 
-    bool aIsNumber = _isNumeric(aPart);
-    bool bIsNumber = _isNumeric(bPart);
+    final bool aIsNumber = _isNumeric(aPart);
+    final bool bIsNumber = _isNumeric(bPart);
 
     if (aIsNumber && bIsNumber) {
-      int aNumber = int.parse(aPart);
-      int bNumber = int.parse(bPart);
-      int cmp = aNumber.compareTo(bNumber);
+      final int aNumber = int.parse(aPart);
+      final int bNumber = int.parse(bPart);
+      final int cmp = aNumber.compareTo(bNumber);
       if (cmp != 0) {
         return cmp;
       }
     } else if (!aIsNumber && !bIsNumber) {
-      int cmp = aPart.compareTo(bPart);
+      final int cmp = aPart.compareTo(bPart);
       if (cmp != 0) {
         return cmp;
       }
@@ -79,14 +79,14 @@ List<String> collectAllStringsFromJSONObject(dynamic obj) {
 }
 
 List<String> _splitAlphaNumeric(String s) {
-  List<String> parts = [];
-  StringBuffer sb = StringBuffer();
+  final List<String> parts = [];
+  final StringBuffer sb = StringBuffer();
 
   bool isNumeric = _isNumeric(s[0]);
   sb.write(s[0]);
 
   for (int i = 1; i < s.length; i++) {
-    bool currentIsNumeric = _isNumeric(s[i]);
+    final bool currentIsNumeric = _isNumeric(s[i]);
     if (currentIsNumeric == isNumeric) {
       sb.write(s[i]);
     } else {
@@ -135,9 +135,9 @@ Future<List<MapEntry<String, String>>> grabLinksCommon(
   Uri reqUrl,
   Map<String, dynamic> additionalSettings,
 ) async {
-  bool matchLinksOutsideATags =
+  final bool matchLinksOutsideATags =
       additionalSettings['matchLinksOutsideATags'] == true;
-  var html = parse(rawBody);
+  final html = parse(rawBody);
   List<MapEntry<String, String>> allLinks = html
       .querySelectorAll('a')
       .map(
@@ -154,7 +154,7 @@ Future<List<MapEntry<String, String>>> grabLinksCommon(
   if (allLinks.isEmpty || matchLinksOutsideATags) {
     // Decode the body if the response is a JSON
     try {
-      var jsonStrings = collectAllStringsFromJSONObject(jsonDecode(rawBody));
+      final jsonStrings = collectAllStringsFromJSONObject(jsonDecode(rawBody));
       allLinks = getLinksInLines(jsonStrings.join('\n'));
       if (allLinks.isEmpty) {
         allLinks = getLinksInLines(
@@ -170,11 +170,11 @@ Future<List<MapEntry<String, String>>> grabLinksCommon(
     }
   }
   List<MapEntry<String, String>> links = [];
-  bool skipSort = additionalSettings['skipSort'] == true;
-  bool filterLinkByText = additionalSettings['filterByLinkText'] == true;
+  final bool skipSort = additionalSettings['skipSort'] == true;
+  final bool filterLinkByText = additionalSettings['filterByLinkText'] == true;
   if ((additionalSettings['customLinkFilterRegex'] as String?)?.isNotEmpty ==
       true) {
-    var reg = RegExp(additionalSettings['customLinkFilterRegex'] as String);
+    final reg = RegExp(additionalSettings['customLinkFilterRegex'] as String);
     links = allLinks.where((element) {
       var link = element.key;
       try {
@@ -273,7 +273,6 @@ class HTML extends AppSource {
         'customLinkFilterRegex',
         label: tr('intermediateLinkRegex'),
         hint: '([0-9]+.)*[0-9]+/\$',
-        required: true,
         additionalValidators: [(value) => regExValidator(value)],
       ),
     ],
@@ -281,7 +280,6 @@ class HTML extends AppSource {
       GeneratedFormSwitch(
         'autoLinkFilterByArch',
         label: tr('autoLinkFilterByArch'),
-        defaultValue: false,
       ),
     ],
   ];
@@ -358,13 +356,13 @@ class HTML extends AppSource {
       additionalSettings['requestHeader'] = additionalSettings['requestHeader']
           .where((l) => (l['requestHeader'] as String?)?.isNotEmpty == true)
           .toList();
-      Map<String, String> requestHeaders = {};
+      final Map<String, String> requestHeaders = {};
       for (int i = 0;
           i < (additionalSettings['requestHeader'] as List<dynamic>).length;
           i++) {
         final headerRow =
             additionalSettings['requestHeader'][i] as Map<String, dynamic>;
-        var temp = (headerRow['requestHeader'] as String).split(':');
+        final temp = (headerRow['requestHeader'] as String).split(':');
         requestHeaders[temp[0].trim()] = temp.sublist(1).join(':').trim();
       }
       return requestHeaders;
@@ -413,11 +411,11 @@ class HTML extends AppSource {
         currentUrl = intLinks.last.key;
       }
     }
-    var uri = Uri.parse(currentUrl);
+    final uri = Uri.parse(currentUrl);
     List<MapEntry<String, String>> links = [];
     String versionExtractionWholePageString = currentUrl;
     if (additionalSettings['directAPKLink'] != true) {
-      Response res = await sourceRequest(currentUrl, additionalSettings);
+      final Response res = await sourceRequest(currentUrl, additionalSettings);
       versionExtractionWholePageString = res.body
           .split('\r\n')
           .join('\n')
@@ -435,7 +433,7 @@ class HTML extends AppSource {
     } else {
       links = [MapEntry(currentUrl, currentUrl)];
     }
-    var rel = links.last.key;
+    final rel = links.last.key;
     var relDecoded = rel;
     try {
       relDecoded = Uri.decodeFull(rel);
@@ -450,7 +448,7 @@ class HTML extends AppSource {
           ? versionExtractionWholePageString
           : relDecoded,
     );
-    var apkReqHeaders = await getRequestHeaders(
+    final apkReqHeaders = await getRequestHeaders(
       additionalSettings,
       rel,
       forAPKDownload: true,
@@ -477,8 +475,8 @@ class HTML extends AppSource {
     return APKDetails(
       version,
       [rel].map((e) {
-        var uri = Uri.parse(e);
-        var fileName = uri.pathSegments.isNotEmpty
+        final uri = Uri.parse(e);
+        final fileName = uri.pathSegments.isNotEmpty
             ? uri.pathSegments.last
             : uri.origin;
         return MapEntry('${e.hashCode}-$fileName', e);

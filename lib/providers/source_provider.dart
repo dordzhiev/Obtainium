@@ -78,11 +78,11 @@ List<MapEntry<String, String>> assumed2DlistToStringMapList(
 // App JSON schema has changed multiple times over the many versions of Obtainium
 // This function takes an App JSON and modifies it if needed to conform to the latest (current) version
 Map<String, dynamic> appJSONCompatibilityModifiers(Map<String, dynamic> json) {
-  var source = SourceProvider().getSource(
+  final source = SourceProvider().getSource(
     json['url'] as String,
     overrideSource: json['overrideSource'] as String?,
   );
-  var formItems = source.combinedAppSpecificSettingFormItems.reduce(
+  final formItems = source.combinedAppSpecificSettingFormItems.reduce(
     (value, element) => [...value, ...element],
   );
   Map<String, dynamic> additionalSettings = getDefaultValuesFromFormItems([
@@ -97,7 +97,7 @@ Map<String, dynamic> appJSONCompatibilityModifiers(Map<String, dynamic> json) {
   }
   // If needed, migrate old-style additionalData to newer-style additionalSettings (V1)
   if (json['additionalData'] != null) {
-    List<String> temp = List<String>.from(
+    final List<String> temp = List<String>.from(
       jsonDecode(json['additionalData'] as String) as List,
     );
     temp.asMap().forEach((i, value) {
@@ -161,12 +161,12 @@ Map<String, dynamic> appJSONCompatibilityModifiers(Map<String, dynamic> json) {
   // apkUrls can either be old list or new named list apkUrls
   List<MapEntry<String, String>> apkUrls = [];
   if (json['apkUrls'] != null) {
-    var apkUrlJson = jsonDecode(json['apkUrls'] as String);
+    final apkUrlJson = jsonDecode(json['apkUrls'] as String);
     try {
       apkUrls = getApkUrlsFromUrls(List<String>.from(apkUrlJson as List));
     } catch (e) {
       apkUrls = assumed2DlistToStringMapList(List<dynamic>.from(apkUrlJson as List));
-      apkUrls = List<dynamic>.from(apkUrlJson as List)
+      apkUrls = List<dynamic>.from(apkUrlJson)
           .map((e) => MapEntry(e[0] as String, e[1] as String))
           .toList();
     }
@@ -205,10 +205,10 @@ Map<String, dynamic> appJSONCompatibilityModifiers(Map<String, dynamic> json) {
           }).toList();
     }
     // Steam source apps should be converted to HTML (#1244)
-    var legacySteamSourceApps = ['steam', 'steam-chat-app'];
+    final legacySteamSourceApps = ['steam', 'steam-chat-app'];
     if (legacySteamSourceApps.contains(additionalSettings['app'] ?? '')) {
       json['url'] = '${json['url']}/mobile';
-      var replacementAdditionalSettings = getDefaultValuesFromFormItems(
+      final replacementAdditionalSettings = getDefaultValuesFromFormItems(
         HTML().combinedAppSpecificSettingFormItems,
       );
       for (var s in replacementAdditionalSettings.keys) {
@@ -233,7 +233,7 @@ Map<String, dynamic> appJSONCompatibilityModifiers(Map<String, dynamic> json) {
         additionalSettings['versionExtractionRegEx'] == '' &&
         json['lastUpdateCheck'] != null) {
       json['url'] = 'https://updates.signal.org/android/latest.json';
-      var replacementAdditionalSettings = getDefaultValuesFromFormItems(
+      final replacementAdditionalSettings = getDefaultValuesFromFormItems(
         HTML().combinedAppSpecificSettingFormItems,
       );
       replacementAdditionalSettings['versionExtractionRegEx'] =
@@ -250,7 +250,7 @@ Map<String, dynamic> appJSONCompatibilityModifiers(Map<String, dynamic> json) {
         additionalSettings['versionExtractionRegEx'] == '' &&
         json['lastUpdateCheck'] != null) {
       json['url'] = 'https://whatsapp.com/android';
-      var replacementAdditionalSettings = getDefaultValuesFromFormItems(
+      final replacementAdditionalSettings = getDefaultValuesFromFormItems(
         HTML().combinedAppSpecificSettingFormItems,
       );
       replacementAdditionalSettings['refreshBeforeDownload'] = true;
@@ -266,7 +266,7 @@ Map<String, dynamic> appJSONCompatibilityModifiers(Map<String, dynamic> json) {
         additionalSettings['versionExtractionRegEx'] == '' &&
         json['lastUpdateCheck'] != null) {
       json['url'] = 'https://www.videolan.org/vlc/download-android.html';
-      var replacementAdditionalSettings = getDefaultValuesFromFormItems(
+      final replacementAdditionalSettings = getDefaultValuesFromFormItems(
         HTML().combinedAppSpecificSettingFormItems,
       );
       replacementAdditionalSettings['refreshBeforeDownload'] = true;
@@ -297,12 +297,12 @@ Map<String, dynamic> appJSONCompatibilityModifiers(Map<String, dynamic> json) {
   // F-Droid no longer needs cloudflare exception since override can be used - migrate apps appropriately
   // This allows us to reverse the changes made for issue #418 (support cloudflare.f-droid)
   // While not causing problems for existing apps from that source that were added in a previous version
-  var overrideSourceWasUndefined = !json.keys.contains('overrideSource');
+  final overrideSourceWasUndefined = !json.keys.contains('overrideSource');
   if ((json['url'] as String).startsWith('https://cloudflare.f-droid.org')) {
     json['overrideSource'] = FDroid().runtimeType.toString();
   } else if (overrideSourceWasUndefined) {
     // Similar to above, but for third-party F-Droid repos
-    RegExpMatch? match = RegExp(
+    final RegExpMatch? match = RegExp(
       '^https?://.+/fdroid/([^/]+(/|\\?)|[^/]+\$)',
     ).firstMatch(json['url'] as String);
     if (match != null) {
@@ -400,7 +400,7 @@ class App {
   );
 
   factory App.fromJson(Map<String, dynamic> json) {
-    Map<String, dynamic> originalJSON = Map.from(json);
+    final Map<String, dynamic> originalJSON = Map.from(json);
     try {
       json = appJSONCompatibilityModifiers(json);
     } catch (e) {
@@ -473,7 +473,7 @@ class App {
 
 // Ensure the input is starts with HTTPS and has no WWW
 String preStandardizeUrl(String url) {
-  var firstDotIndex = url.indexOf('.');
+  final firstDotIndex = url.indexOf('.');
   if (!(firstDotIndex >= 0 && firstDotIndex != url.length - 1)) {
     throw UnsupportedURLError();
   }
@@ -481,8 +481,8 @@ String preStandardizeUrl(String url) {
       url.toLowerCase().indexOf('https://') != 0) {
     url = 'https://$url';
   }
-  var uri = Uri.tryParse(url);
-  var trailingSlash =
+  final uri = Uri.tryParse(url);
+  final trailingSlash =
       ((uri?.path.endsWith('/') ?? false) ||
           ((uri?.path.isEmpty ?? false) && url.endsWith('/'))) &&
       (uri?.queryParameters.isEmpty ?? false);
@@ -524,8 +524,8 @@ Map<String, dynamic> getDefaultValuesFromFormItems(
 
 List<MapEntry<String, String>> getApkUrlsFromUrls(List<String> urls) =>
     urls.map((e) {
-      var segments = e.split('/').where((el) => el.trim().isNotEmpty);
-      var apkSegs = segments.where((s) => s.toLowerCase().endsWith('.apk'));
+      final segments = e.split('/').where((el) => el.trim().isNotEmpty);
+      final apkSegs = segments.where((s) => s.toLowerCase().endsWith('.apk'));
       return MapEntry(apkSegs.isNotEmpty ? apkSegs.last : segments.last, e);
     }).toList();
 
@@ -533,9 +533,9 @@ Future<List<MapEntry<String, String>>> filterApksByArch(
   List<MapEntry<String, String>> apkUrls,
 ) async {
   if (apkUrls.length > 1) {
-    var abis = (await DeviceInfoPlugin().androidInfo).supportedAbis;
+    final abis = (await DeviceInfoPlugin().androidInfo).supportedAbis;
     for (var abi in abis) {
-      var urls2 = apkUrls
+      final urls2 = apkUrls
           .where(
             (element) =>
                 RegExp('.*$abi.*', caseSensitive: false).hasMatch(element.key),
@@ -577,10 +577,10 @@ sourceRequestStreamResponse(
   const maxRedirects = 10;
   List<Cookie> cookies = [];
   while (redirectCount < maxRedirects) {
-    var httpClient = createHttpClient(
+    final httpClient = createHttpClient(
       additionalSettings['allowInsecure'] == true,
     );
-    var request = await httpClient.openUrl(method, currentUrl);
+    final request = await httpClient.openUrl(method, currentUrl);
     if (requestHeaders != null) {
       requestHeaders.forEach((key, value) {
         request.headers.set(key, value);
@@ -685,10 +685,10 @@ abstract class AppSource {
     bool followRedirects = true,
     Object? postBody,
   }) async {
-    var sp = SettingsProvider();
+    final sp = SettingsProvider();
     await sp.initializeSettings();
     getSourceConfigValues(additionalSettings, sp);
-    var additionalSettingsPlusSourceConfig = {
+    final additionalSettingsPlusSourceConfig = {
       ...additionalSettings,
       ...(await getSourceConfigValues(additionalSettings, sp)),
     };
@@ -696,12 +696,12 @@ abstract class AppSource {
       url,
       additionalSettingsPlusSourceConfig,
     );
-    var method = postBody == null ? 'GET' : 'POST';
-    var requestHeaders = await getRequestHeaders(
+    final method = postBody == null ? 'GET' : 'POST';
+    final requestHeaders = await getRequestHeaders(
       additionalSettingsPlusSourceConfig,
       url,
     );
-    var streamedResponseUrlWithResponseAndClient =
+    final streamedResponseUrlWithResponseAndClient =
         await sourceRequestStreamResponse(
           method,
           url,
@@ -768,7 +768,6 @@ abstract class AppSource {
       GeneratedFormSwitch(
         'useVersionCodeAsOSVersion',
         label: tr('useVersionCodeAsOSVersion'),
-        defaultValue: false,
       ),
     ],
     [
@@ -787,7 +786,6 @@ abstract class AppSource {
       GeneratedFormSwitch(
         'invertAPKFilter',
         label: '${tr('invertRegEx')} (${tr('filterAPKsByRegEx')})',
-        defaultValue: false,
       ),
     ],
     [
@@ -803,14 +801,12 @@ abstract class AppSource {
       GeneratedFormSwitch(
         'shizukuPretendToBeGooglePlay',
         label: tr('shizukuPretendToBeGooglePlay'),
-        defaultValue: false,
       ),
     ],
     [
       GeneratedFormSwitch(
         'allowInsecure',
         label: tr('allowInsecure'),
-        defaultValue: false,
       ),
     ],
     [
@@ -852,7 +848,6 @@ abstract class AppSource {
         GeneratedFormSwitch(
           'releaseDateAsVersion',
           label: '${tr('releaseDateAsVersion')} (${tr('pseudoVersion')})',
-          defaultValue: false,
         ),
       ]);
     }
@@ -866,14 +861,13 @@ abstract class AppSource {
         .where((e) => e.isNotEmpty)
         .toList();
 
-    var moreConditionalItems = <List<GeneratedFormItem>>[];
+    final moreConditionalItems = <List<GeneratedFormItem>>[];
     if (allowIncludeZips) {
       moreConditionalItems.addAll([
         [
           GeneratedFormSwitch(
             'includeZips',
             label: tr('includeZips'),
-            defaultValue: false,
           ),
         ],
         [
@@ -915,7 +909,7 @@ abstract class AppSource {
     Map<String, dynamic> additionalSettings,
     SettingsProvider settingsProvider,
   ) async {
-    Map<String, String> results = {};
+    final Map<String, String> results = {};
     for (var e in sourceConfigSettingFormItems) {
       var val = hostChanged && !hostIdenticalDespiteAnyChange
           ? additionalSettings[e.key]
@@ -1006,7 +1000,7 @@ String? intValidator(String? value, {bool positive = false}) {
   if (value == null) {
     return tr('invalidInput');
   }
-  var num = int.tryParse(value);
+  final num = int.tryParse(value);
   if (num == null) {
     return tr('invalidInput');
   }
@@ -1057,7 +1051,7 @@ String? extractVersion(
 ) {
   if (versionExtractionRegEx?.isNotEmpty == true) {
     String? version = stringToCheck;
-    var match = RegExp(versionExtractionRegEx!).allMatches(version);
+    final match = RegExp(versionExtractionRegEx!).allMatches(version);
     if (match.isEmpty) {
       throw NoVersionError();
     }
@@ -1081,9 +1075,9 @@ List<MapEntry<String, String>> filterApks(
   bool? invert,
 ) {
   if (apkFilterRegEx?.isNotEmpty == true) {
-    var reg = RegExp(apkFilterRegEx!);
+    final reg = RegExp(apkFilterRegEx!);
     apkUrls = apkUrls.where((element) {
-      var hasMatch = reg.hasMatch(element.key);
+      final hasMatch = reg.hasMatch(element.key);
       return invert == true ? !hasMatch : hasMatch;
     }).toList();
   }
@@ -1134,15 +1128,15 @@ class SourceProvider {
   AppSource getSource(String url, {String? overrideSource}) {
     url = preStandardizeUrl(url);
     if (overrideSource != null) {
-      var srcs = sources.where(
+      final srcs = sources.where(
         (e) => e.runtimeType.toString() == overrideSource,
       );
       if (srcs.isEmpty) {
         throw UnsupportedURLError();
       }
-      var res = srcs.first;
-      var originalHosts = res.hosts;
-      var newHost = Uri.parse(url).host;
+      final res = srcs.first;
+      final originalHosts = res.hosts;
+      final newHost = Uri.parse(url).host;
       res.hosts = [newHost];
       res.hostChanged = true;
       if (originalHosts.contains(newHost)) {
@@ -1210,9 +1204,9 @@ class SourceProvider {
     if (trackOnlyOverride || source.enforceTrackOnly) {
       additionalSettings['trackOnly'] = true;
     }
-    var trackOnly = additionalSettings['trackOnly'] == true;
-    String standardUrl = source.standardizeUrl(url);
-    APKDetails apk = await source.getLatestAPKDetails(
+    final trackOnly = additionalSettings['trackOnly'] == true;
+    final String standardUrl = source.standardizeUrl(url);
+    final APKDetails apk = await source.getLatestAPKDetails(
       standardUrl,
       additionalSettings,
     );
@@ -1220,7 +1214,7 @@ class SourceProvider {
     if (source.runtimeType !=
             HTML().runtimeType && // Some sources do it separately
         source.runtimeType != SourceForge().runtimeType) {
-      String? extractedVersion = extractVersion(
+      final String? extractedVersion = extractVersion(
         additionalSettings['versionExtractionRegEx'] as String?,
         additionalSettings['matchGroupToUse'] as String?,
         apk.version,
@@ -1247,7 +1241,7 @@ class SourceProvider {
     }
     var name = currentApp != null ? currentApp.name.trim() : '';
     name = name.isNotEmpty ? name : apk.names.name;
-    App finalApp = App(
+    final App finalApp = App(
       currentApp?.id ??
           ((additionalSettings['appId'] != null)
               ? additionalSettings['appId'] as String?
@@ -1295,14 +1289,14 @@ class SourceProvider {
     List<String> alreadyAddedUrls = const [],
     AppSource? sourceOverride,
   }) async {
-    List<App> apps = [];
-    Map<String, dynamic> errors = {};
+    final List<App> apps = [];
+    final Map<String, dynamic> errors = {};
     for (var url in urls) {
       try {
         if (alreadyAddedUrls.contains(url)) {
           throw ObtainiumError(tr('appAlreadyAdded'));
         }
-        var source = sourceOverride ?? getSource(url);
+        final source = sourceOverride ?? getSource(url);
         apps.add(
           await getApp(
             source,

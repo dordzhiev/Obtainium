@@ -231,8 +231,8 @@ class NotificationsProvider {
 
   void _showNotificationPayload(String? payload, {bool doublePop = false}) {
     if (payload?.isNotEmpty == true) {
-      var title = (payload ?? '\n\n').split('\n').first;
-      var content = (payload ?? '\n\n').split('\n').sublist(1).join('\n');
+      final title = (payload ?? '\n\n').split('\n').first;
+      final content = (payload ?? '\n\n').split('\n').sublist(1).join('\n');
       globalNavigatorKey.currentState?.push(
         PageRouteBuilder(
           pageBuilder: (context, _, _) => AlertDialog(
@@ -241,9 +241,9 @@ class NotificationsProvider {
             actions: [
               TextButton(
                 onPressed: () {
-                  Navigator.of(context).pop(null);
+                  Navigator.of(context).pop();
                   if (doublePop) {
-                    Navigator.of(context).pop(null);
+                    Navigator.of(context).pop();
                   }
                 },
                 child: Text(tr('ok')),

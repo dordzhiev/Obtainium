@@ -44,8 +44,8 @@ Widget buildRepoRenameWarning({
     if (app?.app.hasPendingRepoRename != true) {
       return const SizedBox.shrink();
     }
-    var appValue = app!;
-    var pendingUrl = appValue.app.pendingRepoRenameUrl!;
+    final appValue = app!;
+    final pendingUrl = appValue.app.pendingRepoRenameUrl!;
     final colorScheme = ColorScheme.of(context);
     final textTheme = TextTheme.of(context);
     return Column(
@@ -171,8 +171,6 @@ Widget buildRepoRenameWarning({
                         }),
                         side: WidgetStatePropertyAll(
                           BorderSide(
-                            width: 1,
-                            strokeAlign: BorderSide.strokeAlignInside,
                             color: colorScheme.outlineVariant,
                           ),
                         ),
@@ -264,9 +262,9 @@ Widget buildRepoRenameWarning({
 
   @override
   Widget build(BuildContext context) {
-    var appsProvider = context.watch<AppsProvider>();
-    var settingsProvider = context.watch<SettingsProvider>();
-    var showAppWebpageFinal =
+    final appsProvider = context.watch<AppsProvider>();
+    final settingsProvider = context.watch<SettingsProvider>();
+    final showAppWebpageFinal =
         (settingsProvider.showAppWebpage &&
             !widget.showOppositeOfPreferredView) ||
         (!settingsProvider.showAppWebpage &&
@@ -304,11 +302,11 @@ Widget buildRepoRenameWarning({
       }
     }
 
-    bool areDownloadsRunning = appsProvider.areDownloadsRunning();
+    final bool areDownloadsRunning = appsProvider.areDownloadsRunning();
 
-    var sourceProvider = SourceProvider();
-    AppInMemory? app = appsProvider.apps[widget.appId]?.deepCopy();
-    var source = app != null
+    final sourceProvider = SourceProvider();
+    final AppInMemory? app = appsProvider.apps[widget.appId]?.deepCopy();
+    final source = app != null
         ? sourceProvider.getSource(
             app.app.url,
             overrideSource: app.app.overrideSource,
@@ -321,12 +319,12 @@ Widget buildRepoRenameWarning({
       prevApp = app;
       getUpdate(app.app.id);
     }
-    var trackOnly = app?.app.additionalSettings['trackOnly'] == true;
+    final trackOnly = app?.app.additionalSettings['trackOnly'] == true;
 
-    bool isVersionDetectionStandard =
+    final bool isVersionDetectionStandard =
         app?.app.additionalSettings['versionDetection'] == true;
 
-    bool installedVersionIsEstimate = app?.app != null
+    final bool installedVersionIsEstimate = app?.app != null
         ? isVersionPseudo(app!.app)
         : false;
 
@@ -337,8 +335,8 @@ Widget buildRepoRenameWarning({
 
     getInfoColumn() {
       String versionLines = '';
-      bool installed = app?.app.installedVersion != null;
-      bool upToDate = app?.app.installedVersion == app?.app.latestVersion;
+      final bool installed = app?.app.installedVersion != null;
+      final bool upToDate = app?.app.installedVersion == app?.app.latestVersion;
       if (installed) {
         versionLines = '${app?.app.installedVersion} ${tr('installed')}';
         if (upToDate) {
@@ -369,13 +367,13 @@ Widget buildRepoRenameWarning({
         infoLines =
             '$infoLines\n${app?.app.apkUrls.length == 1 ? app?.app.apkUrls[0].key : plural('apk', app?.app.apkUrls.length ?? 0)}';
       }
-      var changeLogFn = app != null ? getChangeLogFn(context, app.app) : null;
+      final changeLogFn = app != null ? getChangeLogFn(context, app.app) : null;
       return Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+            padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Column(
               children: [
                 Padding(
@@ -509,7 +507,6 @@ Widget buildRepoRenameWarning({
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 25,
-                          vertical: 0,
                         ),
                         child: Text(
                           hash,
@@ -713,7 +710,7 @@ Widget buildRepoRenameWarning({
               TextButton(
                 onPressed: () {
                   HapticFeedback.selectionClick();
-                  var updatedApp = app?.app;
+                  final updatedApp = app?.app;
                   if (updatedApp != null) {
                     updatedApp.installedVersion = updatedApp.latestVersion;
                     appsProvider.saveApps([updatedApp]);
@@ -732,7 +729,7 @@ Widget buildRepoRenameWarning({
       return await showDialog<Map<String, dynamic>?>(
         context: context,
         builder: (BuildContext ctx) {
-          var items = (source?.combinedAppSpecificSettingFormItems ?? []).map((
+          final items = (source?.combinedAppSpecificSettingFormItems ?? []).map((
             row,
           ) {
             row = row.map((e) {
@@ -754,25 +751,25 @@ Widget buildRepoRenameWarning({
 
     handleAdditionalOptionChanges(Map<String, dynamic>? values) {
       if (app != null && values != null) {
-        Map<String, dynamic> originalSettings = app.app.additionalSettings;
+        final Map<String, dynamic> originalSettings = app.app.additionalSettings;
         app.app.additionalSettings = values;
         if (source?.enforceTrackOnly == true) {
           app.app.additionalSettings['trackOnly'] = true;
           // ignore: use_build_context_synchronously
           showMessage(tr('appsFromSourceAreTrackOnly'), context);
         }
-        var versionDetectionEnabled =
+        final versionDetectionEnabled =
             app.app.additionalSettings['versionDetection'] == true &&
             originalSettings['versionDetection'] != true;
-        var releaseDateVersionEnabled =
+        final releaseDateVersionEnabled =
             app.app.additionalSettings['releaseDateAsVersion'] == true &&
             originalSettings['releaseDateAsVersion'] != true;
-        var releaseDateVersionDisabled =
+        final releaseDateVersionDisabled =
             app.app.additionalSettings['releaseDateAsVersion'] != true &&
             originalSettings['releaseDateAsVersion'] == true;
         if (releaseDateVersionEnabled) {
           if (app.app.releaseDate != null) {
-            bool isUpdated = app.app.installedVersion == app.app.latestVersion;
+            final bool isUpdated = app.app.installedVersion == app.app.latestVersion;
             app.app.latestVersion = app.app.releaseDate!.microsecondsSinceEpoch
                 .toString();
             if (isUpdated) {
@@ -801,11 +798,11 @@ Widget buildRepoRenameWarning({
               !areDownloadsRunning
           ? () async {
               try {
-                var successMessage = app?.app.installedVersion == null
+                final successMessage = app?.app.installedVersion == null
                     ? tr('installed')
                     : tr('appsUpdated');
                 HapticFeedback.heavyImpact();
-                var res = await appsProvider.downloadAndInstallLatestApps(
+                final res = await appsProvider.downloadAndInstallLatestApps(
                   app?.app.id != null ? [app!.app.id] : [],
                   globalNavigatorKey.currentContext,
                 );
@@ -859,7 +856,7 @@ Widget buildRepoRenameWarning({
                     onPressed: app?.downloadProgress != null || updating
                         ? null
                         : () async {
-                            var values = await showAdditionalOptionsDialog();
+                            final values = await showAdditionalOptionsDialog();
                             handleAdditionalOptionChanges(values);
                           },
                     tooltip: tr('additionalOptions'),

@@ -17,11 +17,11 @@ class RuStore extends AppSource {
 
   @override
   String sourceSpecificStandardizeURL(String url, {bool forSelection = false}) {
-    RegExp standardUrlRegEx = RegExp(
+    final RegExp standardUrlRegEx = RegExp(
       '^https?://(www\\.)?${getSourceRegex(hosts)}/catalog/app/+[^/]+',
       caseSensitive: false,
     );
-    RegExpMatch? match = standardUrlRegEx.firstMatch(url);
+    final RegExpMatch? match = standardUrlRegEx.firstMatch(url);
     if (match == null) {
       throw InvalidURLError(name);
     }
@@ -53,26 +53,26 @@ class RuStore extends AppSource {
     String standardUrl,
     Map<String, dynamic> additionalSettings,
   ) async {
-    String? appId = await tryInferringAppId(standardUrl);
-    Response res0 = await sourceRequest(
+    final String? appId = await tryInferringAppId(standardUrl);
+    final Response res0 = await sourceRequest(
       'https://backapi.rustore.ru/applicationData/overallInfo/$appId',
       additionalSettings,
     );
     if (res0.statusCode != 200) {
       throw getObtainiumHttpError(res0);
     }
-    var appDetails =
+    final appDetails =
         ((await decodeJsonBody(res0.bodyBytes)) as Map<String, dynamic>)['body']
             as Map<String, dynamic>;
     if (appDetails['appId'] == null) {
       throw NoReleasesError();
     }
 
-    String appName = (appDetails['appName'] as String?) ?? tr('app');
-    String author = (appDetails['companyName'] as String?) ?? name;
-    String? dateStr = appDetails['appVerUpdatedAt'] as String?;
-    String? version = appDetails['versionName'] as String?;
-    String? changeLog = appDetails['whatsNew'] as String?;
+    final String appName = (appDetails['appName'] as String?) ?? tr('app');
+    final String author = (appDetails['companyName'] as String?) ?? name;
+    final String? dateStr = appDetails['appVerUpdatedAt'] as String?;
+    final String? version = appDetails['versionName'] as String?;
+    final String? changeLog = appDetails['whatsNew'] as String?;
     if (version == null) {
       throw NoVersionError();
     }
@@ -81,13 +81,13 @@ class RuStore extends AppSource {
       relDate = DateTime.parse(dateStr);
     }
 
-    Response res1 = await sourceRequest(
+    final Response res1 = await sourceRequest(
       'https://backapi.rustore.ru/applicationData/v2/download-link',
       additionalSettings,
       followRedirects: false,
       postBody: {"appId": appDetails['appId'], "firstInstall": true},
     );
-    var downloadDetails = (await decodeJsonBody(res1.bodyBytes))['body'];
+    final downloadDetails = (await decodeJsonBody(res1.bodyBytes))['body'];
     try {
       if (res1.statusCode != 200 || downloadDetails['downloadUrls'][0]['url'] == null) {
         throw NoAPKError();

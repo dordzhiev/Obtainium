@@ -12,11 +12,11 @@ class Mullvad extends AppSource {
 
   @override
   String sourceSpecificStandardizeURL(String url, {bool forSelection = false}) {
-    RegExp standardUrlRegEx = RegExp(
+    final RegExp standardUrlRegEx = RegExp(
       '^https?://(www\\.)?${getSourceRegex(hosts)}',
       caseSensitive: false,
     );
-    RegExpMatch? match = standardUrlRegEx.firstMatch(url);
+    final RegExpMatch? match = standardUrlRegEx.firstMatch(url);
     if (match == null) {
       throw InvalidURLError(name);
     }
@@ -32,17 +32,17 @@ class Mullvad extends AppSource {
     String standardUrl,
     Map<String, dynamic> additionalSettings,
   ) async {
-    Response res = await sourceRequest(
+    final Response res = await sourceRequest(
       '$standardUrl/en/download/android',
       additionalSettings,
     );
     if (res.statusCode == 200) {
-      var versions = parse(res.body)
+      final versions = parse(res.body)
           .querySelectorAll('p')
           .map((e) => e.innerHtml)
           .where((p) => p.contains('Latest version: '))
           .map((e) {
-            var match = RegExp('[0-9]+(\\.[0-9]+)*').firstMatch(e);
+            final match = RegExp('[0-9]+(\\.[0-9]+)*').firstMatch(e);
             if (match == null) {
               return '';
             } else {

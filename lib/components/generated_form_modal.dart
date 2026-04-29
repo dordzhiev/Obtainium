@@ -70,7 +70,7 @@ class _GeneratedFormModalState extends State<GeneratedFormModal> {
         TextButton(
           autofocus: context.read<SettingsProvider>().isTV,
           onPressed: () {
-            Navigator.of(context).pop(null);
+            Navigator.of(context).pop();
           },
           child: Text(
             widget.singleNullReturnButton == null

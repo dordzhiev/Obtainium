@@ -11,11 +11,11 @@ class APKCombo extends AppSource {
 
   @override
   String sourceSpecificStandardizeURL(String url, {bool forSelection = false}) {
-    RegExp standardUrlRegEx = RegExp(
+    final RegExp standardUrlRegEx = RegExp(
       '^https?://(www\\.)?${getSourceRegex(hosts)}/+[^/]+/+[^/]+',
       caseSensitive: false,
     );
-    var match = standardUrlRegEx.firstMatch(url);
+    final match = standardUrlRegEx.firstMatch(url);
     if (match == null) {
       throw InvalidURLError(name);
     }
@@ -48,15 +48,15 @@ class APKCombo extends AppSource {
     String standardUrl,
     Map<String, dynamic> additionalSettings,
   ) async {
-    var res = await sourceRequest('$standardUrl/download/apk', {});
+    final res = await sourceRequest('$standardUrl/download/apk', {});
     if (res.statusCode != 200) {
       throw getObtainiumHttpError(res);
     }
-    var html = parse(res.body);
+    final html = parse(res.body);
     return html
         .querySelectorAll('#variants-tab > div > ul > li')
         .map((e) {
-          String? arch = e
+          final String? arch = e
               .querySelector('code')
               ?.text
               .trim()
@@ -69,7 +69,7 @@ class APKCombo extends AppSource {
                 !Uri.parse(url).path.toLowerCase().endsWith('.apk')) {
               url = null;
             }
-            String verCode =
+            final String verCode =
                 e.querySelector('.info .header .vercode')?.text.trim() ?? '';
             return MapEntry<String, String>(
               arch != null ? '$arch-$verCode.apk' : '',
@@ -88,8 +88,8 @@ class APKCombo extends AppSource {
     String standardUrl,
     Map<String, dynamic> additionalSettings,
   ) async {
-    var freshURLs = await getApkUrls(standardUrl, additionalSettings);
-    var path2Match = Uri.parse(assetUrl).path;
+    final freshURLs = await getApkUrls(standardUrl, additionalSettings);
+    final path2Match = Uri.parse(assetUrl).path;
     for (var url in freshURLs) {
       if (Uri.parse(url.value).path == path2Match) {
         return url.value;
@@ -103,19 +103,19 @@ class APKCombo extends AppSource {
     String standardUrl,
     Map<String, dynamic> additionalSettings,
   ) async {
-    String appId = (await tryInferringAppId(standardUrl))!;
-    var preres = await sourceRequest(standardUrl, additionalSettings);
+    final String appId = (await tryInferringAppId(standardUrl))!;
+    final preres = await sourceRequest(standardUrl, additionalSettings);
     if (preres.statusCode != 200) {
       throw getObtainiumHttpError(preres);
     }
-    var res = parse(preres.body);
-    String? version = res.querySelector('div.version')?.text.trim();
+    final res = parse(preres.body);
+    final String? version = res.querySelector('div.version')?.text.trim();
     if (version == null) {
       throw NoVersionError();
     }
-    String appName = res.querySelector('div.app_name')?.text.trim() ?? appId;
-    String author = res.querySelector('div.author')?.text.trim() ?? appName;
-    List<String> infoArray = res
+    final String appName = res.querySelector('div.app_name')?.text.trim() ?? appId;
+    final String author = res.querySelector('div.author')?.text.trim() ?? appName;
+    final List<String> infoArray = res
         .querySelectorAll('div.information-table > .item > div.value')
         .map((e) => e.text.trim())
         .toList();

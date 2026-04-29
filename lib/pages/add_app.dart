@@ -70,16 +70,16 @@ class AddAppPageState extends State<AddAppPage> {
         if (overrideSource != null) {
           pickedSourceOverride = overrideSource;
         }
-        bool overrideChanged =
+        final bool overrideChanged =
             pickedSourceOverride != previousPickedSourceOverride;
         previousPickedSourceOverride = pickedSourceOverride;
         if (updateUrlInput) {
           urlInputKey++;
         }
-        var prevHost = pickedSource?.hosts.isNotEmpty == true
+        final prevHost = pickedSource?.hosts.isNotEmpty == true
             ? pickedSource?.hosts[0]
             : null;
-        var source = valid
+        final source = valid
             ? sourceProvider.getSource(
                 userInput,
                 overrideSource: pickedSourceOverride,
@@ -106,22 +106,22 @@ class AddAppPageState extends State<AddAppPage> {
 
   @override
   Widget build(BuildContext context) {
-    AppsProvider appsProvider = context.read<AppsProvider>();
-    SettingsProvider settingsProvider = context.watch<SettingsProvider>();
-    NotificationsProvider notificationsProvider = context
+    final AppsProvider appsProvider = context.read<AppsProvider>();
+    final SettingsProvider settingsProvider = context.watch<SettingsProvider>();
+    final NotificationsProvider notificationsProvider = context
         .read<NotificationsProvider>();
 
-    bool doingSomething = gettingAppInfo || searching;
+    final bool doingSomething = gettingAppInfo || searching;
 
     Future<bool> getTrackOnlyConfirmationIfNeeded(
       bool userPickedTrackOnly, {
       bool ignoreHideSetting = false,
     }) async {
-      var useTrackOnly = userPickedTrackOnly || pickedSource!.enforceTrackOnly;
+      final useTrackOnly = userPickedTrackOnly || pickedSource!.enforceTrackOnly;
       if (useTrackOnly &&
           (!settingsProvider.hideTrackOnlyWarning || ignoreHideSetting)) {
         // ignore: use_build_context_synchronously
-        var values = await showDialog(
+        final values = await showDialog(
           context: context,
           builder: (BuildContext ctx) {
             return GeneratedFormModal(
@@ -172,13 +172,13 @@ class AddAppPageState extends State<AddAppPage> {
         gettingAppInfo = true;
       });
       try {
-        var userPickedTrackOnly = additionalSettings['trackOnly'] == true;
+        final userPickedTrackOnly = additionalSettings['trackOnly'] == true;
         App? app;
         if ((await getTrackOnlyConfirmationIfNeeded(userPickedTrackOnly)) &&
             (await getReleaseDateAsVersionConfirmationIfNeeded(
               userPickedTrackOnly,
             ))) {
-          var trackOnly = pickedSource!.enforceTrackOnly || userPickedTrackOnly;
+          final trackOnly = pickedSource!.enforceTrackOnly || userPickedTrackOnly;
           app = await sourceProvider.getApp(
             pickedSource!,
             userInput.trim(),
@@ -190,7 +190,7 @@ class AddAppPageState extends State<AddAppPage> {
           // Only download the APK here if you need to for the package ID
           if (isTempId(app) && app.additionalSettings['trackOnly'] != true) {
             // ignore: use_build_context_synchronously
-            var apkUrl = await appsProvider.confirmAppFileUrl(
+            final apkUrl = await appsProvider.confirmAppFileUrl(
               app,
               context,
               false,
@@ -203,7 +203,7 @@ class AddAppPageState extends State<AddAppPage> {
                 .toList()
                 .indexOf(apkUrl.value);
             // ignore: use_build_context_synchronously
-            var downloadedArtifact = await appsProvider.downloadApp(
+            final downloadedArtifact = await appsProvider.downloadApp(
               app,
               globalNavigatorKey.currentContext,
               notificationsProvider: notificationsProvider,
@@ -317,12 +317,12 @@ class AddAppPageState extends State<AddAppPage> {
       setState(() {
         searching = true;
       });
-      var sourceStrings = <String, List<String>>{};
+      final sourceStrings = <String, List<String>>{};
       sourceProvider.sources.where((e) => e.canSearch).forEach((s) {
         sourceStrings[s.name] = [s.name];
       });
       try {
-        var searchSources =
+        final searchSources =
             await showDialog<List<String>?>(
               context: context,
               builder: (BuildContext ctx) {
@@ -332,8 +332,6 @@ class AddAppPageState extends State<AddAppPage> {
                     args: [plural('source', 2).toLowerCase()],
                   ),
                   entries: sourceStrings,
-                  selectedByDefault: true,
-                  onlyOneSelectionAllowed: false,
                   titlesAreLinks: false,
                   deselectThese: settingsProvider.searchDeselected,
                 );
@@ -344,7 +342,7 @@ class AddAppPageState extends State<AddAppPage> {
           settingsProvider.searchDeselected = sourceStrings.keys
               .where((s) => !searchSources.contains(s))
               .toList();
-          List<MapEntry<String, Map<String, List<String>>>?>
+          final List<MapEntry<String, Map<String, List<String>>>?>
           results = (await Future.wait(
             sourceProvider.sources
                 .where((e) => searchSources.contains(e.name))
@@ -380,14 +378,13 @@ class AddAppPageState extends State<AddAppPage> {
                                               e.runtimeType,
                                         )
                                         .map((a) {
-                                          var uri = Uri.parse(a.app.url);
+                                          final uri = Uri.parse(a.app.url);
                                           return '${uri.origin}${uri.path}';
                                         }),
                                   ],
                                   defaultValue: e.hosts.isNotEmpty
                                       ? e.hosts[0]
                                       : '',
-                                  required: true,
                                 ),
                               ],
                             ],
@@ -420,16 +417,16 @@ class AddAppPageState extends State<AddAppPage> {
           )).where((a) => a != null).toList();
 
           // Interleave results instead of simple reduce
-          Map<String, MapEntry<String, List<String>>> res = {};
+          final Map<String, MapEntry<String, List<String>>> res = {};
           var si = 0;
           var done = false;
           while (!done) {
             done = true;
             for (var r in results) {
-              var sourceName = r!.key;
+              final sourceName = r!.key;
               if (r.value.length > si) {
                 done = false;
-                var singleRes = r.value.entries.elementAt(si);
+                final singleRes = r.value.entries.elementAt(si);
                 res[singleRes.key] = MapEntry(sourceName, singleRes.value);
               }
             }
@@ -438,7 +435,7 @@ class AddAppPageState extends State<AddAppPage> {
           if (res.isEmpty) {
             throw ObtainiumError(tr('noResults'));
           }
-          List<String>? selectedUrls = res.isEmpty
+          final List<String>? selectedUrls = res.isEmpty
               ? []
               // ignore: use_build_context_synchronously
               : await showDialog<List<String>?>(
@@ -452,7 +449,7 @@ class AddAppPageState extends State<AddAppPage> {
                   },
                 );
           if (selectedUrls != null && selectedUrls.isNotEmpty) {
-            var sourceName = res[selectedUrls[0]]?.key;
+            final sourceName = res[selectedUrls[0]]?.key;
             changeUserInput(
               selectedUrls[0],
               true,
@@ -607,7 +604,6 @@ class AddAppPageState extends State<AddAppPage> {
           children: [
             const SizedBox(height: 16),
             CategoryEditorSelector(
-              alignment: WrapAlignment.start,
               onSelected: (categories) {
                 pickedCategories = categories;
               },
@@ -677,7 +673,6 @@ class AddAppPageState extends State<AddAppPage> {
     Widget getSourcesListWidget() => Padding(
       padding: const EdgeInsets.all(16),
       child: Wrap(
-        direction: Axis.horizontal,
         alignment: WrapAlignment.spaceBetween,
         spacing: 12,
         children: [
