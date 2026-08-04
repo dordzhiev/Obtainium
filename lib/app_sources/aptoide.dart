@@ -6,8 +6,8 @@ import 'package:obtainium/providers/source_provider.dart';
 
 class Aptoide extends AppSource {
   Aptoide() {
-    hosts = ['aptoide.com'];
     name = 'Aptoide';
+    hosts = ['aptoide.com'];
     allowSubDomains = true;
     naiveStandardVersionDetection = true;
     showReleaseDateAsVersionToggle = true;
@@ -15,15 +15,11 @@ class Aptoide extends AppSource {
 
   @override
   String sourceSpecificStandardizeURL(String url, {bool forSelection = false}) {
-    final RegExp standardUrlRegEx = RegExp(
-      '^https?://([^\\.]+\\.){2,}${getSourceRegex(hosts)}',
-      caseSensitive: false,
+    return standardizeUrlWithRegex(
+      url,
+      subdomainPrefix: r'([^\.]+\.)+',
+      pathPattern: '',
     );
-    final RegExpMatch? match = standardUrlRegEx.firstMatch(url);
-    if (match == null) {
-      throw InvalidURLError(name);
-    }
-    return match.group(0)!;
   }
 
   @override
@@ -31,11 +27,8 @@ class Aptoide extends AppSource {
     String standardUrl, {
     Map<String, dynamic> additionalSettings = const {},
   }) async {
-    final appDetails = await getAppDetailsJSON(
-      standardUrl,
-      additionalSettings,
-    );
-    return appDetails['package'] as String?;
+    return (await getAppDetailsJSON(standardUrl, additionalSettings))['package']
+        as String?;
   }
 
   Future<Map<String, dynamic>> getAppDetailsJSON(
@@ -46,10 +39,12 @@ class Aptoide extends AppSource {
     if (res.statusCode != 200) {
       throw getObtainiumHttpError(res);
     }
-    final idMatch = RegExp('"app":{"id":[0-9]+').firstMatch(res.body);
+    final idMatch = RegExp(
+      r'"app"\s*:\s*\{\s*"id"\s*:\s*([0-9]+)',
+    ).firstMatch(res.body);
     String? id;
     if (idMatch != null) {
-      id = res.body.substring(idMatch.start + 12, idMatch.end);
+      id = idMatch.group(1)!;
     } else {
       throw NoReleasesError();
     }
@@ -58,15 +53,13 @@ class Aptoide extends AppSource {
       additionalSettings,
     );
     if (res2.statusCode != 200) {
-      throw getObtainiumHttpError(res);
+      throw getObtainiumHttpError(res2);
     }
-    final decoded = jsonDecode(res2.body) as Map<String, dynamic>;
-    return Map<String, dynamic>.from(
-      (decoded['nodes'] as Map<String, dynamic>)['meta'] is Map<String, dynamic>
-          ? ((decoded['nodes'] as Map<String, dynamic>)['meta']
-              as Map<String, dynamic>)['data'] as Map<String, dynamic>
-          : ((decoded['nodes'] as Map)['meta'] as Map)['data'] as Map,
-    );
+    final data = jsonDecode(res2.body)?['nodes']?['meta']?['data'];
+    if (data == null) {
+      throw NoReleasesError();
+    }
+    return data as Map<String, dynamic>;
   }
 
   @override
@@ -74,31 +67,40 @@ class Aptoide extends AppSource {
     String standardUrl,
     Map<String, dynamic> additionalSettings,
   ) async {
-    final appDetails = await getAppDetailsJSON(standardUrl, additionalSettings);
-    final String appName = (appDetails['name'] as String?) ?? tr('app');
-    final String author =
-        ((appDetails['developer'] as Map<String, dynamic>?)?['name'] as String?) ??
-        name;
-    final String? dateStr = appDetails['updated'] as String?;
-    final fileDetails = appDetails['file'] as Map<String, dynamic>?;
-    final String? version = fileDetails?['vername'] as String?;
-    final String? apkUrl = fileDetails?['path'] as String?;
-    if (version == null) {
-      throw NoVersionError();
-    }
-    if (apkUrl == null) {
-      throw NoAPKError();
-    }
-    DateTime? relDate;
-    if (dateStr != null) {
-      relDate = DateTime.parse(dateStr);
-    }
+    try {
+      final appDetails = await getAppDetailsJSON(
+        standardUrl,
+        additionalSettings,
+      );
+      final String appName = appDetails['name'] as String? ?? tr('app');
+      final String author =
+          (appDetails['developer'] as Map<String, dynamic>?)?['name']
+              as String? ??
+          name;
+      final String? dateStr = appDetails['updated'] as String?;
+      final String? version =
+          (appDetails['file'] as Map<String, dynamic>?)?['vername'] as String?;
+      final String? apkUrl =
+          (appDetails['file'] as Map<String, dynamic>?)?['path'] as String?;
+      if (version == null || version.isEmpty) {
+        throw NoVersionError();
+      }
+      if (apkUrl == null) {
+        throw NoAPKError();
+      }
+      DateTime? relDate;
+      if (dateStr != null) {
+        relDate = DateTime.tryParse(dateStr);
+      }
 
-    return APKDetails(
-      version,
-      getApkUrlsFromUrls([apkUrl]),
-      AppNames(author, appName),
-      releaseDate: relDate,
-    );
+      return APKDetails(
+        version,
+        getApkUrlsFromUrls([apkUrl]),
+        AppNames(author, appName),
+        releaseDate: relDate,
+      );
+    } catch (e) {
+      rethrowOrWrapError(e);
+    }
   }
 }

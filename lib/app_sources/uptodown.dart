@@ -1,30 +1,36 @@
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:html/parser.dart';
-import 'package:obtainium/core/logging/app_logger.dart';
 import 'package:obtainium/custom_errors.dart';
+import 'package:obtainium/core/logging/app_logger.dart';
 import 'package:obtainium/providers/source_provider.dart';
 
-DateTime? parseDateTimeMMMddCommayyyy(String? dateString) {
-  DateTime? releaseDate;
+DateTime? parseUptodownDate(String? dateString) {
+  if (dateString == null) return null;
   try {
-    releaseDate = dateString != null
-        ? DateFormat('MMM dd, yyyy').parse(dateString)
-        : null;
-    releaseDate = dateString != null && releaseDate == null
-        ? DateFormat('MMMM dd, yyyy').parse(dateString)
-        : releaseDate;
-  } catch (err, stackTrace) {
-    AppLogger.debug(
-      'Failed to parse Uptodown date string: $dateString',
-      error: err,
-      stackTrace: stackTrace,
+    return DateFormat('MMM dd, yyyy').parse(dateString);
+  } catch (_) {
+    AppLogger.error(
+      'Failed to parse Uptodown release date (short format): $dateString',
+      message:
+          'Failed to parse Uptodown release date (short format): $dateString',
     );
   }
-  return releaseDate;
+  try {
+    return DateFormat('MMMM dd, yyyy').parse(dateString);
+  } catch (_) {
+    AppLogger.error(
+      'Failed to parse Uptodown release date: $dateString',
+      message: 'Failed to parse Uptodown release date: $dateString',
+    );
+  }
+  return null;
 }
 
 class Uptodown extends AppSource {
   Uptodown() {
+    name = 'Uptodown';
     hosts = ['uptodown.com'];
     allowSubDomains = true;
     naiveStandardVersionDetection = true;
@@ -34,15 +40,7 @@ class Uptodown extends AppSource {
 
   @override
   String sourceSpecificStandardizeURL(String url, {bool forSelection = false}) {
-    final RegExp standardUrlRegEx = RegExp(
-      '^https?://([^\\.]+\\.){2,}${getSourceRegex(hosts)}',
-      caseSensitive: false,
-    );
-    final RegExpMatch? match = standardUrlRegEx.firstMatch(url);
-    if (match == null) {
-      throw InvalidURLError(name);
-    }
-    return '${match.group(0)!}/android/download';
+    return '${standardizeUrlWithRegex(url, subdomainPrefix: r'([^\\.]+\.)+', pathPattern: '')}/android/download';
   }
 
   @override
@@ -66,7 +64,10 @@ class Uptodown extends AppSource {
     }
     final html = parse(res.body);
     final String? version = html.querySelector('div.version')?.innerHtml;
-    final String? name = html.querySelector('#detail-app-name')?.innerHtml.trim();
+    final String? name = html
+        .querySelector('#detail-app-name')
+        ?.innerHtml
+        .trim();
     final String? author = html.querySelector('#author-link')?.innerHtml.trim();
     final detailElements = html
         .querySelectorAll('#technical-information td')
@@ -74,7 +75,9 @@ class Uptodown extends AppSource {
         .where((e) => e.isNotEmpty)
         .toList();
     final String? appId = detailElements.lastOrNull;
-    final String? dateStr = detailElements.elementAtOrNull(detailElements.length - 5);
+    final String? dateStr = detailElements.elementAtOrNull(
+      detailElements.length - 5,
+    );
     final String? fileId = html
         .querySelector('#detail-app-name')
         ?.attributes['data-file-id'];
@@ -97,37 +100,41 @@ class Uptodown extends AppSource {
     String standardUrl,
     Map<String, dynamic> additionalSettings,
   ) async {
-    final appDetails = await getAppDetailsFromPage(
-      standardUrl,
-      additionalSettings,
-    );
-    final version = appDetails['version'];
-    final appId = appDetails['appId'];
-    final fileId = appDetails['fileId'];
-    final extension = appDetails['extension'];
-    if (version == null) {
-      throw NoVersionError();
+    try {
+      final appDetails = await getAppDetailsFromPage(
+        standardUrl,
+        additionalSettings,
+      );
+      final version = appDetails['version'];
+      final appId = appDetails['appId'];
+      final fileId = appDetails['fileId'];
+      final extension = appDetails['extension'];
+      if (version == null || version.isEmpty) {
+        throw NoVersionError();
+      }
+      if (fileId == null) {
+        throw NoAPKError();
+      }
+      final apkUrl = '$standardUrl/$fileId-x';
+      if (appId == null) {
+        throw NoReleasesError();
+      }
+      final String appName = appDetails['name'] ?? tr('app');
+      final String author = appDetails['author'] ?? name;
+      final String? dateStr = appDetails['dateStr'];
+      DateTime? relDate;
+      if (dateStr != null) {
+        relDate = parseUptodownDate(dateStr);
+      }
+      return APKDetails(
+        version,
+        [MapEntry('$appId.${extension ?? 'apk'}', apkUrl)],
+        AppNames(author, appName),
+        releaseDate: relDate,
+      );
+    } catch (e) {
+      rethrowOrWrapError(e);
     }
-    if (fileId == null) {
-      throw NoAPKError();
-    }
-    final apkUrl = '$standardUrl/$fileId-x';
-    if (appId == null) {
-      throw NoReleasesError();
-    }
-    final String appName = appDetails['name'] ?? tr('app');
-    final String author = appDetails['author'] ?? name;
-    final String? dateStr = appDetails['dateStr'];
-    DateTime? relDate;
-    if (dateStr != null) {
-      relDate = parseDateTimeMMMddCommayyyy(dateStr);
-    }
-    return APKDetails(
-      version,
-      [MapEntry('$appId.$extension', apkUrl)],
-      AppNames(author, appName),
-      releaseDate: relDate,
-    );
   }
 
   @override
@@ -141,12 +148,12 @@ class Uptodown extends AppSource {
       throw getObtainiumHttpError(res);
     }
     final html = parse(res.body);
-    final finalUrlKey = html
+    final urlDataKey = html
         .querySelector('#detail-download-button')
         ?.attributes['data-url'];
-    if (finalUrlKey == null) {
+    if (urlDataKey == null) {
       throw NoAPKError();
     }
-    return 'https://dw.${hosts[0]}/dwn/$finalUrlKey';
+    return 'https://dw.${hosts[0]}/dwn/$urlDataKey';
   }
 }

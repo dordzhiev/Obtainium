@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:easy_localization/easy_localization.dart';
@@ -5,45 +6,52 @@ import 'package:html/parser.dart';
 import 'package:http/http.dart';
 import 'package:obtainium/app_sources/github.dart';
 import 'package:obtainium/app_sources/gitlab.dart';
-import 'package:obtainium/components/generated_form.dart';
+import 'package:obtainium/components/generated_form_model.dart';
 import 'package:obtainium/core/logging/app_logger.dart';
 import 'package:obtainium/custom_errors.dart';
 import 'package:obtainium/providers/source_provider.dart';
 
 class FDroid extends AppSource {
+  static const _maxChangeLogCodeUnits = 2048;
+  @override
+  String get name => tr('fdroid');
+
   FDroid() {
     hosts = ['f-droid.org'];
-    name = tr('fdroid');
     naiveStandardVersionDetection = true;
     canSearch = true;
-    additionalSourceAppSpecificSettingFormItems = [
-      [
-        GeneratedFormTextField(
-          'filterVersionsByRegEx',
-          label: tr('filterVersionsByRegEx'),
-          required: false,
-          additionalValidators: [
-            (value) {
-              return regExValidator(value);
-            },
-          ],
-        ),
-      ],
-      [
-        GeneratedFormSwitch(
-          'trySelectingSuggestedVersionCode',
-          label: tr('trySelectingSuggestedVersionCode'),
-          defaultValue: true,
-        ),
-      ],
-      [
-        GeneratedFormSwitch(
-          'autoSelectHighestVersionCode',
-          label: tr('autoSelectHighestVersionCode'),
-        ),
-      ],
-    ];
+    inferAppIdFromUrlPath = true;
   }
+
+  @override
+  List<List<GeneratedFormItem>>
+  get additionalSourceAppSpecificSettingFormItems => [
+    [
+      GeneratedFormTextField(
+        'filterVersionsByRegEx',
+        label: tr('filterVersionsByRegEx'),
+        required: false,
+        additionalValidators: [
+          (value) {
+            return regExValidator(value);
+          },
+        ],
+      ),
+    ],
+    [
+      GeneratedFormSwitch(
+        'trySelectingSuggestedVersionCode',
+        label: tr('trySelectingSuggestedVersionCode'),
+        value: true,
+      ),
+    ],
+    [
+      GeneratedFormSwitch(
+        'autoSelectHighestVersionCode',
+        label: tr('autoSelectHighestVersionCode'),
+      ),
+    ],
+  ];
 
   @override
   String sourceSpecificStandardizeURL(String url, {bool forSelection = false}) {
@@ -68,95 +76,91 @@ class FDroid extends AppSource {
   }
 
   @override
-  Future<String?> tryInferringAppId(
-    String standardUrl, {
-    Map<String, dynamic> additionalSettings = const {},
-  }) async {
-    return Uri.parse(standardUrl).pathSegments.last;
-  }
-
-  @override
   Future<APKDetails> getLatestAPKDetails(
     String standardUrl,
     Map<String, dynamic> additionalSettings,
   ) async {
-    final String? appId = await tryInferringAppId(standardUrl);
-    final String host = Uri.parse(standardUrl).host;
-    final details = getAPKUrlsFromFDroidPackagesAPIResponse(
-      await sourceRequest(
-        'https://$host/api/v1/packages/$appId',
-        additionalSettings,
-      ),
-      'https://$host/repo/$appId',
-      standardUrl,
-      name,
-      additionalSettings: additionalSettings,
-    );
-    if (!hostChanged) {
-      try {
-        final res = await sourceRequest(
-          'https://gitlab.com/fdroid/fdroiddata/-/raw/master/metadata/$appId.yml',
+    try {
+      final String? appId = await tryInferringAppId(standardUrl);
+      if (appId == null) {
+        throw NoReleasesError();
+      }
+      final String host = Uri.parse(standardUrl).host;
+      final details = getAPKUrlsFromFDroidPackagesAPIResponse(
+        await sourceRequest(
+          'https://$host/api/v1/packages/$appId',
           additionalSettings,
-        );
-        final lines = res.body.split('\n');
-        final authorLines = lines.where((l) => l.startsWith('AuthorName: '));
-        if (authorLines.isNotEmpty) {
-          details.names.author = authorLines.first
-              .split(': ')
-              .sublist(1)
-              .join(': ');
+        ),
+        'https://$host/repo/$appId',
+        standardUrl,
+        name,
+        additionalSettings: additionalSettings,
+      );
+      if (!hostChanged) {
+        try {
+          final res = await sourceRequest(
+            'https://gitlab.com/fdroid/fdroiddata/-/raw/master/metadata/$appId.yml',
+            additionalSettings,
+          );
+          final lines = res.body.split('\n');
+          final authorLines = lines.where((l) => l.startsWith('AuthorName: '));
+          if (authorLines.isNotEmpty) {
+            details.names.author = authorLines.first
+                .split(': ')
+                .sublist(1)
+                .join(': ');
+          }
+          final changelogUrls = lines
+              .where((l) => l.startsWith('Changelog: '))
+              .map((e) => e.split(' ').sublist(1).join(' '));
+          if (changelogUrls.isNotEmpty) {
+            details.changeLog = changelogUrls.first;
+            bool isGitHub = false;
+            bool isGitLab = false;
+            try {
+              GitHub(
+                hostChanged: true,
+              ).sourceSpecificStandardizeURL(details.changeLog!);
+              isGitHub = true;
+            } on InvalidURLError {
+              // URL does not match GitHub format, silently skipped
+            }
+            try {
+              GitLab(
+                hostChanged: true,
+              ).sourceSpecificStandardizeURL(details.changeLog!);
+              isGitLab = true;
+            } on InvalidURLError {
+              // URL does not match GitLab format, silently skipped
+            }
+            if ((isGitHub || isGitLab) &&
+                (details.changeLog?.indexOf('/blob/') ?? -1) >= 0) {
+              details.changeLog = (await sourceRequest(
+                details.changeLog!.replaceFirst('/blob/', '/raw/'),
+                additionalSettings,
+              )).body;
+            }
+          }
+        } catch (e) {
+          AppLogger.info(
+            'Failed to process changelog for F-Droid app: ${e.toString()}',
+          );
         }
-        final changelogUrls = lines
-            .where((l) => l.startsWith('Changelog: '))
-            .map((e) => e.split(' ').sublist(1).join(' '));
-        if (changelogUrls.isNotEmpty) {
-          details.changeLog = changelogUrls.first;
-          bool isGitHub = false;
-          bool isGitLab = false;
-          try {
-            GitHub(
-              hostChanged: true,
-            ).sourceSpecificStandardizeURL(details.changeLog!);
-            isGitHub = true;
-          } catch (e, stackTrace) {
-            AppLogger.debug(
-              'FDroid changelog is not a valid GitHub URL',
-              error: e,
-              stackTrace: stackTrace,
-            );
+        if ((details.changeLog?.length ?? 0) > _maxChangeLogCodeUnits) {
+          final cl = details.changeLog!;
+          var end = _maxChangeLogCodeUnits;
+          if (end > 0 &&
+              cl.codeUnitAt(end - 1) >= 0xD800 &&
+              cl.codeUnitAt(end - 1) <= 0xDBFF) {
+            end--;
           }
-          try {
-            GitLab(
-              hostChanged: true,
-            ).sourceSpecificStandardizeURL(details.changeLog!);
-            isGitLab = true;
-          } catch (e, stackTrace) {
-            AppLogger.debug(
-              'FDroid changelog is not a valid GitLab URL',
-              error: e,
-              stackTrace: stackTrace,
-            );
-          }
-          if ((isGitHub || isGitLab) &&
-              (details.changeLog?.indexOf('/blob/') ?? -1) >= 0) {
-            details.changeLog = (await sourceRequest(
-              details.changeLog!.replaceFirst('/blob/', '/raw/'),
-              additionalSettings,
-            )).body;
-          }
+          details.changeLog = '${cl.substring(0, end)}...';
         }
-      } catch (e, stackTrace) {
-        AppLogger.warn(
-          'Failed to fetch/normalize FDroid changelog',
-          error: e,
-          stackTrace: stackTrace,
-        );
       }
-      if ((details.changeLog?.length ?? 0) > 2048) {
-        details.changeLog = '${details.changeLog!.substring(0, 2048)}...';
-      }
+      return details;
+    } catch (e) {
+      rethrowOrWrapError(e);
     }
-    return details;
   }
 
   @override
@@ -207,18 +211,18 @@ class FDroid extends AppSource {
     final filterVersionsByRegEx =
         (additionalSettings['filterVersionsByRegEx'] as String?)?.isNotEmpty ==
             true
-        ? additionalSettings['filterVersionsByRegEx'] as String?
+        ? additionalSettings['filterVersionsByRegEx'] as String
         : null;
-    final String? apkFilterRegEx =
+    final apkFilterRegEx =
         (additionalSettings['apkFilterRegEx'] as String?)?.isNotEmpty == true
-        ? additionalSettings['apkFilterRegEx'] as String?
+        ? additionalSettings['apkFilterRegEx'] as String
         : null;
     if (res.statusCode == 200) {
       final response = jsonDecode(res.body) as Map<String, dynamic>;
-      List<dynamic> releases = (response['packages'] as List<dynamic>? ?? []);
+      List<dynamic> releases = response['packages'] as List<dynamic>? ?? [];
       if (apkFilterRegEx != null) {
         releases = releases.where((rel) {
-          final String apk = '${apkUrlPrefix}_${(rel as Map<String, dynamic>)['versionCode']}.apk';
+          final String apk = '${apkUrlPrefix}_${rel['versionCode']}.apk';
           return filterApks(
             [MapEntry(apk, apk)],
             apkFilterRegEx,
@@ -242,29 +246,27 @@ class FDroid extends AppSource {
         );
         if (suggestedReleases.isNotEmpty) {
           releaseChoices = suggestedReleases;
-          version = (suggestedReleases.first as Map<String, dynamic>)['versionName']
-              as String?;
+          version = suggestedReleases.first['versionName'] as String?;
         }
       }
       // Apply the release filter if any
       if (filterVersionsByRegEx?.isNotEmpty == true) {
         version = null;
         releaseChoices = [];
+        final versionFilter = RegExp(filterVersionsByRegEx!);
         for (var i = 0; i < releases.length; i++) {
-          if (RegExp(
-            filterVersionsByRegEx!,
-          ).hasMatch((releases[i] as Map<String, dynamic>)['versionName'] as String)) {
-            version = (releases[i] as Map<String, dynamic>)['versionName']
-                as String?;
+          if (versionFilter.hasMatch(releases[i]['versionName'] as String)) {
+            version = releases[i]['versionName'] as String?;
+            break;
           }
         }
-        if (version == null) {
+        if (version == null || version.isEmpty) {
           throw NoVersionError();
         }
       }
       // Default to the highest version
-      version ??= (releases[0] as Map<String, dynamic>)['versionName'] as String?;
-      if (version == null) {
+      version ??= releases[0]['versionName'] as String?;
+      if (version == null || version.isEmpty) {
         throw NoVersionError();
       }
       // If a suggested release was not already picked, pick all those with the selected version

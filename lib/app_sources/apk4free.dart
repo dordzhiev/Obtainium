@@ -10,15 +10,11 @@ class Apk4Free extends AppSource {
 
   @override
   String sourceSpecificStandardizeURL(String url, {bool forSelection = false}) {
-    final RegExp standardUrlRegEx = RegExp(
-      '^https?://(www\\.)?${getSourceRegex(hosts)}/[^/]+/?',
-      caseSensitive: false,
+    return standardizeUrlWithRegex(
+      url,
+      subdomainPrefix: r'(www\.)?',
+      pathPattern: r'/[^/]+/?',
     );
-    final match = standardUrlRegEx.firstMatch(url);
-    if (match == null) {
-      throw InvalidURLError(name);
-    }
-    return match.group(0)!;
   }
 
   @override
@@ -66,6 +62,7 @@ class Apk4Free extends AppSource {
       }
 
       var appVersion = html.querySelector('div.version')?.text.trim();
+      if (appVersion?.isNotEmpty != true) appVersion = null;
 
       if (appVersion == null) {
         final rawTitle = titleElement?.text.trim() ?? '';
@@ -98,7 +95,10 @@ class Apk4Free extends AppSource {
         throw NoReleasesError();
       }
 
-      final resDlPage = await sourceRequest(downloadPageLink, additionalSettings);
+      final resDlPage = await sourceRequest(
+        downloadPageLink,
+        additionalSettings,
+      );
       if (resDlPage.statusCode != 200) {
         throw getObtainiumHttpError(resDlPage);
       }
@@ -120,7 +120,7 @@ class Apk4Free extends AppSource {
           var href = link.attributes['href'];
           if (href == null) continue;
           href = href.trim();
-          if (href.toLowerCase().endsWith('.apk')) {
+          if (AppSource.isApkOrContainerFile(href)) {
             var linkText = link.text.trim();
             if (linkText.isEmpty) linkText = href.split('/').last;
             apkUrls.add(MapEntry(linkText, href));
@@ -150,8 +150,7 @@ class Apk4Free extends AppSource {
 
       return APKDetails(appVersion.trim(), apkUrls, AppNames(name, fullTitle));
     } catch (e) {
-      if (e is ObtainiumError) rethrow;
-      throw ObtainiumError('$name Error: $e');
+      rethrowOrWrapError(e);
     }
   }
 }

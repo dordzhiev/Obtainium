@@ -1,101 +1,116 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
+
 import 'package:bcrypt/bcrypt.dart';
 import 'package:crypto/crypto.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:obtainium/custom_errors.dart';
+import 'package:obtainium/core/logging/app_logger.dart';
 import 'package:obtainium/providers/source_provider.dart';
-import 'dart:math';
 
-// kanged from https://github.com/DUpdateSystem/UpgradeAll/blob/b2f92c9/core-websdk/src/main/java/net/xzos/upgradeall/core/websdk/api/client_proxy/hubs/CoolApk.kt
+/// CoolApk app source.
+///
+/// The client version and device fingerprint are locked to a specific CoolAPK
+/// client release. If the server enforces minimum-version requirements, these
+/// must be periodically updated.
+/// Token generation adapted from https://github.com/XiaoMengXinX/FuckCoolapkTokenV2
+/// and https://github.com/Coolapk-UWP/Coolapk-UWP
 class CoolApk extends AppSource {
+  @override
+  String get name => tr('coolApk');
+
   CoolApk() {
-    name = tr('coolApk');
-    hosts = ['www.coolapk.com', 'api2.coolapk.com'];
+    hosts = ['coolapk.com'];
     allowSubDomains = true;
     naiveStandardVersionDetection = true;
     allowOverride = false;
+    inferAppIdFromUrlPath = true;
   }
 
   @override
-  String sourceSpecificStandardizeURL(String url, {bool forSelection = false}) {
-    final RegExp standardUrlRegEx = RegExp(
-      r'^https?://(www\.)?coolapk\.com/apk/[^/]+',
-      caseSensitive: false,
-    );
-    final match = standardUrlRegEx.firstMatch(url);
-    if (match == null) {
-      throw InvalidURLError(name);
-    }
-    final String standardizedUrl = match.group(0)!;
-    return standardizedUrl;
-  }
-
-  @override
-  Future<String?> tryInferringAppId(
-    String standardUrl, {
-    Map<String, dynamic> additionalSettings = const {},
-  }) async {
-    final String appId = Uri.parse(standardUrl).pathSegments.last;
-    return appId;
-  }
+  String sourceSpecificStandardizeURL(
+    String url, {
+    bool forSelection = false,
+  }) => standardizeUrlWithRegex(
+    url,
+    subdomainPrefix: r'(www\.)?',
+    pathPattern: r'/apk/[^/]+',
+  );
 
   @override
   Future<APKDetails> getLatestAPKDetails(
     String standardUrl,
     Map<String, dynamic> additionalSettings,
   ) async {
-    final String appId = (await tryInferringAppId(standardUrl))!;
-    final String apiUrl = 'https://api2.coolapk.com';
+    try {
+      final String? appId = await tryInferringAppId(standardUrl);
+      if (appId == null) {
+        throw NoReleasesError();
+      }
+      const String apiUrl = 'https://api2.coolapk.com';
 
-    // get latest
-    final detailUrl = '$apiUrl/v6/apk/detail?id=$appId';
-    final headers = await getRequestHeaders(additionalSettings, detailUrl);
-    final res = await sourceRequest(detailUrl, additionalSettings);
+      final detailUrl = '$apiUrl/v6/apk/detail?id=$appId';
+      final res = await sourceRequest(detailUrl, additionalSettings);
 
-    if (res.statusCode != 200) {
-      throw getObtainiumHttpError(res);
+      if (res.statusCode != 200) {
+        throw getObtainiumHttpError(res);
+      }
+
+      Map<String, dynamic> json;
+      try {
+        json = jsonDecode(res.body) as Map<String, dynamic>;
+      } catch (e) {
+        AppLogger.error(
+          'Failed to decode JSON response: $e',
+          message: 'Failed to decode JSON response: $e',
+        );
+        throw NoReleasesError();
+      }
+      if (json['status'] == -2 || json['data'] == null) {
+        throw NoReleasesError();
+      }
+
+      final detail = json['data'];
+      final String version = detail['apkversionname'].toString();
+      final String appName = detail['title'].toString();
+      final String author = detail['developername']?.toString() ?? 'CoolApk';
+      final String changelog = detail['changelog']?.toString() ?? '';
+      int? releaseDate;
+      final lastUpdate = detail['lastupdate'];
+      if (lastUpdate is int) {
+        releaseDate = lastUpdate * 1000;
+      } else if (lastUpdate != null) {
+        final parsed = int.tryParse(lastUpdate.toString());
+        releaseDate = parsed != null ? parsed * 1000 : null;
+      }
+      final String aid = detail['id'].toString();
+
+      final String apkUrl = await _getLatestApkUrl(
+        apiUrl,
+        appId,
+        aid,
+        version,
+        additionalSettings,
+      );
+      if (apkUrl.isEmpty) {
+        throw NoAPKError();
+      }
+
+      final String apkName = '${appId}_$version.apk';
+
+      return APKDetails(
+        version,
+        [MapEntry(apkName, apkUrl)],
+        AppNames(author, appName),
+        releaseDate: releaseDate != null
+            ? DateTime.fromMillisecondsSinceEpoch(releaseDate)
+            : null,
+        changeLog: changelog,
+      );
+    } catch (e) {
+      rethrowOrWrapError(e);
     }
-
-    final json = jsonDecode(res.body);
-    if (json['status'] == -2 || json['data'] == null) {
-      throw NoReleasesError();
-    }
-
-    final detail = json['data'] as Map<String, dynamic>;
-    final String version = detail['apkversionname'].toString();
-    final String appName = detail['title'].toString();
-    final String author = detail['developername']?.toString() ?? 'CoolApk';
-    final String changelog = detail['changelog']?.toString() ?? '';
-    final int? releaseDate = detail['lastupdate'] != null
-        ? (detail['lastupdate'] is int
-              ? (detail['lastupdate'] as int) * 1000
-              : int.parse(detail['lastupdate'].toString()) * 1000)
-        : null;
-    final String aid = detail['id'].toString();
-
-    // get apk url
-    final String apkUrl = await _getLatestApkUrl(
-      apiUrl,
-      appId,
-      aid,
-      version,
-      headers,
-    );
-    if (apkUrl.isEmpty) {
-      throw NoAPKError();
-    }
-
-    final String apkName = '${appId}_$version.apk';
-
-    return APKDetails(
-      version,
-      [MapEntry(apkName, apkUrl)],
-      AppNames(author, appName),
-      releaseDate: releaseDate != null
-          ? DateTime.fromMillisecondsSinceEpoch(releaseDate)
-          : null,
-      changeLog: changelog,
-    );
   }
 
   Future<String> _getLatestApkUrl(
@@ -103,10 +118,14 @@ class CoolApk extends AppSource {
     String appId,
     String aid,
     String version,
-    Map<String, String>? headers,
+    Map<String, dynamic> additionalSettings,
   ) async {
     final String url = '$apiUrl/v6/apk/download?pn=$appId&aid=$aid';
-    final res = await sourceRequest(url, {}, followRedirects: false);
+    final res = await sourceRequest(
+      url,
+      additionalSettings,
+      followRedirects: false,
+    );
     if (res.statusCode >= 300 && res.statusCode < 400) {
       final String location = res.headers['location'] ?? '';
       return location;
@@ -121,7 +140,6 @@ class CoolApk extends AppSource {
     bool forAPKDownload = false,
   }) async {
     final tokenPair = _getToken();
-    // CoolAPK header
     return {
       'User-Agent':
           'Dalvik/2.1.0 (Linux; U; Android 9; MI 8 SE MIUI/9.5.9) (#Build; Xiaomi; MI 8 SE; PKQ1.181121.001; 9) +CoolMarket/12.4.2-2208241-universal',
@@ -154,8 +172,6 @@ class CoolApk extends AppSource {
       (_) => rand.nextInt(256).toRadixString(16).padLeft(2, '0'),
     ).join(':');
 
-    // 加密算法来自 https://github.com/XiaoMengXinX/FuckCoolapkTokenV2、https://github.com/Coolapk-UWP/Coolapk-UWP
-    // device
     final String aid = randHexString(16);
     final String mac = randMacAddress();
     const manufactor = 'Google';
@@ -163,26 +179,22 @@ class CoolApk extends AppSource {
     const model = 'Pixel 5a';
     const buildNumber = 'SQ1D.220105.007';
 
-    // generate deviceCode
     final String deviceCode = base64.encode(
       '$aid; ; ; $mac; $manufactor; $brand; $model; $buildNumber'.codeUnits,
     );
 
-    // generate timestamp
     final String timeStamp = (DateTime.now().millisecondsSinceEpoch ~/ 1000)
         .toString();
     final String base64TimeStamp = base64.encode(timeStamp.codeUnits);
     final String md5TimeStamp = md5.convert(timeStamp.codeUnits).toString();
     final String md5DeviceCode = md5.convert(deviceCode.codeUnits).toString();
 
-    // generate token
     final String token =
         'token://com.coolapk.market/dcf01e569c1e3db93a3d0fcf191a622c?$md5TimeStamp\$$md5DeviceCode&com.coolapk.market';
     final String base64Token = base64.encode(token.codeUnits);
     final String md5Base64Token = md5.convert(base64Token.codeUnits).toString();
     final String md5Token = md5.convert(token.codeUnits).toString();
 
-    // generate salt and hash
     final String bcryptSalt =
         '\$2a\$10\$${base64TimeStamp.substring(0, 14)}/${md5Token.substring(0, 6)}u';
     final String bcryptResult = BCrypt.hashpw(md5Base64Token, bcryptSalt);

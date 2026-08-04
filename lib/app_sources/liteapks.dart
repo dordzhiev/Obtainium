@@ -12,15 +12,11 @@ class LiteAPKs extends AppSource {
 
   @override
   String sourceSpecificStandardizeURL(String url, {bool forSelection = false}) {
-    final RegExp standardUrlRegEx = RegExp(
-      '^https?://(www\\.)?${getSourceRegex(hosts)}/+[^/]+',
-      caseSensitive: false,
+    return standardizeUrlWithRegex(
+      url,
+      subdomainPrefix: r'(www\.)?',
+      pathPattern: r'/+[^/]+',
     );
-    final RegExpMatch? match = standardUrlRegEx.firstMatch(url);
-    if (match == null) {
-      throw InvalidURLError(name);
-    }
-    return match.group(0)!;
   }
 
   @override
@@ -38,6 +34,7 @@ class LiteAPKs extends AppSource {
     String standardUrl,
     Map<String, dynamic> additionalSettings,
   ) async {
+    // Generate a time-based CDN token (server expects +3h offset).
     final token = base64
         .encode(
           utf8.encode(
@@ -60,60 +57,69 @@ class LiteAPKs extends AppSource {
     String standardUrl,
     Map<String, dynamic> additionalSettings,
   ) async {
-    final standardUri = Uri.parse(standardUrl);
-    final slug = standardUri.path
-        .split('.')
-        .reversed
-        .toList()
-        .sublist(1)
-        .reversed
-        .join('.');
-    final Response res1 = await sourceRequest(
-      '${standardUri.origin}/wp-json/wp/v2/posts?slug=$slug',
-      additionalSettings,
-    );
-    if (res1.statusCode != 200) {
-      throw getObtainiumHttpError(res1);
-    }
+    try {
+      final standardUri = Uri.parse(standardUrl);
+      final slug = standardUri.path
+          .split('.')
+          .reversed
+          .toList()
+          .sublist(1)
+          .reversed
+          .join('.');
+      final Response res1 = await sourceRequest(
+        '${standardUri.origin}/wp-json/wp/v2/posts?slug=$slug',
+        additionalSettings,
+      );
+      if (res1.statusCode != 200) {
+        throw getObtainiumHttpError(res1);
+      }
 
-    final liteAppId = jsonDecode(res1.body)[0]['id'];
-    if (liteAppId == null) {
-      throw NoReleasesError();
-    }
+      final posts = jsonDecode(res1.body);
+      if (posts is! List || posts.isEmpty) {
+        throw NoReleasesError();
+      }
+      final liteAppId = posts[0]['id'];
+      if (liteAppId == null) {
+        throw NoReleasesError();
+      }
 
-    final Response res2 = await sourceRequest(
-      '${standardUri.origin}/wp-json/v2/posts/$liteAppId',
-      additionalSettings,
-    );
-    if (res2.statusCode != 200) {
-      throw getObtainiumHttpError(res2);
-    }
-    final json = jsonDecode(res2.body);
+      final Response res2 = await sourceRequest(
+        '${standardUri.origin}/wp-json/v2/posts/$liteAppId',
+        additionalSettings,
+      );
+      if (res2.statusCode != 200) {
+        throw getObtainiumHttpError(res2);
+      }
+      final json = jsonDecode(res2.body);
 
-    final appName = json['data']?['title'] as String?;
-    final author = json['data']?['publisher'] as String?;
-    final version = json['data']?['versions']?[0]?['version'] as String?;
-    if (version == null) {
-      throw NoVersionError();
+      final appName = json['data']?['title'] as String?;
+      final author = json['data']?['publisher'] as String?;
+      final version = json['data']?['versions']?[0]?['version'] as String?;
+      if (version == null || version.isEmpty) {
+        throw NoVersionError();
+      }
+      final apkUrls =
+          ((json['data']?['versions']?[0]?['version_downloads']
+                          as List<dynamic>?)
+                      ?.map((l) => l['version_download_link']) ??
+                  [])
+              .map(
+                (l) => MapEntry<String, String>(
+                  Uri.decodeComponent(Uri.parse(l as String).pathSegments.last),
+                  '$l#$standardUrl',
+                ),
+              )
+              .toList();
+      return APKDetails(
+        version,
+        apkUrls,
+        AppNames(
+          author ?? Uri.parse(standardUrl).host,
+          appName ?? standardUrl.split('/').last,
+        ),
+      );
+    } catch (e) {
+      rethrowOrWrapError(e);
     }
-    final apkUrls =
-        ((json['data']?['versions']?[0]?['version_downloads'] as List<dynamic>?)
-                    ?.map((l) => l['version_download_link']) ??
-                [])
-            .map(
-              (l) => MapEntry<String, String>(
-                Uri.decodeComponent(Uri.parse(l as String).pathSegments.last),
-                '$l#$standardUrl',
-              ),
-            )
-            .toList();
-    return APKDetails(
-      version,
-      apkUrls,
-      AppNames(
-        author ?? Uri.parse(standardUrl).host,
-        appName ?? standardUrl.split('/').last,
-      ),
-    );
   }
 }
